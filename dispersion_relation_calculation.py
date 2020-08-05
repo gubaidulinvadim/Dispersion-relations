@@ -185,7 +185,7 @@ if __name__ == '__main__':
     def tune_dist_func_long(Jz):
         # beta_z = 670
         # sigma_z = 0.06
-        max_tune_shift = 0.001
+        max_tune_shift = 0.0015
         return get_pelens_tune(Jz, max_tune_shift)
     # dispersion_solver = TransverseDispersionRelation(tune_dist_func)
     # dispersion_solver = LongitudinalDispersionRelation(tune_dist_func_long)
