@@ -8,6 +8,7 @@ from scipy.integrate import quad
 from matplotlib import pyplot as plt
 import seaborn as sbs
 
+import matplotlib.ticker as ticker
 
 def trunc_exp_rv(low, high, scale, size):
     rnd_cdf = np.random.uniform(ss.expon.cdf(x=low, scale=scale),
@@ -89,6 +90,26 @@ def get_elens_tune(dQmax, Jx, Jy, ratio=1.0, simplified=True):
         dQy = quad(lambda u: (i0(Jy*u) - i1(Jy*u)) * i0(Jx*u)
                    * np.exp(-(Jx + Jy) * u), 0, 1)[0]
     return dQmax*dQx, dQmax*dQy
+@np.vectorize
+def get_sc_tune(dQmax, Jx, Jy, Jz, ratio=1.0, simplified=True):
+    '''
+    @params
+    dQmax -- (float) Maximal tune shift at the beam's core
+    Jx -- (float) horizontal action variable (normalized to the beam emittance)
+    Jy -- (float) vertical action variable (normalized to the beam emittance)
+    ratio -- (float) electron to ion beam profile ratio 
+    simplified -- (bool) if True, uses numerical approximation for faster calculation time
+    '''
+    Jx /= 2*ratio**2
+    Jy /= 2*ratio**2
+    if simplified:
+        return get_elens_tune_simplified(dQmax, Jx, Jy)
+    else:
+        dQx = quad(lambda u: (i0(Jx*u) - i1(Jx*u)) * i0(Jy*u)
+                   * np.exp(-(Jx + Jy) * u), 0, 1)[0]
+        dQy = quad(lambda u: (i0(Jy*u) - i1(Jy*u)) * i0(Jx*u)
+                   * np.exp(-(Jx + Jy) * u), 0, 1)[0]
+    return dQmax*dQx*i0(-Jz/4)*np.exp(-Jz/4), dQmax*dQy*i0(-Jz/4)*np.exp(-Jz/4)
 
 
 @np.vectorize
@@ -125,21 +146,36 @@ def get_rfq_tune(Jz, v_2):
 
 
 def plot_spread(dQx, dQy, filename=None, normalise=True):
+    sbs.set(rc={'figure.figsize':(8.3,5.2),
+            'text.usetex':True,
+           'font.family':'serif',
+           'font.size':20,
+           'axes.linewidth':2,
+           'lines.linewidth':3,
+           'legend.fontsize':16,
+           'legend.numpoints':1,},
+        style='ticks',
+        palette='colorblind',
+        context='talk')
     dQrms_x, dQrms_y = (np.sqrt(np.var(dQx)), np.sqrt(
         np.var(dQy))) if normalise else (1., 1.)
-    ax = sbs.jointplot(dQx/dQrms_x, dQy/dQrms_x, kind='hex', marginal_kws={'bins': 30,
-                                                                           'hist': True,
-                                                                           'hist_kws': {'density': True}},
-                       ratio=3)  # , xlim=(0, 1), ylim=(0, 1))
-    ax.ax_joint.set_xlabel(r'$\Delta Q_x$') #/ \delta Q_{rms}$')
-    ax.ax_joint.set_ylabel(r'$\Delta Q_y$') #/ \delta Q_{rms}$')
-    plt.tight_layout()
+    ax = sbs.jointplot(dQx/dQrms_x, dQy/dQrms_x, kind='hex', marginal_kws={'bins': 15,
+                                                                           #'hist': True,
+                                                                           #'hist_kws': {'density': True}
+                                                                           },
+                       ratio=3 , xlim=(0, 1), ylim=(0, 1))
+    ax.ax_joint.set_xlabel(r'$\Delta Q_x/\Delta Q_\mathrm{max}$') #/ \delta Q_{rms}$')
+    ax.ax_joint.set_ylabel(r'$\Delta Q_y/\Delta Q_\mathrm{max}$') #/ \delta Q_{rms}$')
+    ax.ax_joint.xaxis.set_major_locator(ticker.MultipleLocator(base=.5))
+    ax.ax_joint.yaxis.set_major_locator(ticker.MultipleLocator(base=.5))
+    ax.ax_joint.minorticks_on()
     if filename != None:
         plt.savefig(
-            '/home/vgubaidulin/PhD/Results/Tune_spreads/'+filename+'.png')
+            '/home/vgubaidulin/PhD/Results/Tune_spreads/'+filename+'.png', bbox_inches = 'tight')
         plt.savefig(
-            '/home/vgubaidulin/PhD/Results/Tune_spreads/'+filename+'.pdf')
-    plt.show()
+            '/home/vgubaidulin/PhD/Results/Tune_spreads/'+filename+'.pdf', bbox_inches='tight')
+    # plt.show()
+    return ax
 
 
 if __name__ == '__main__':
@@ -185,13 +221,22 @@ if __name__ == '__main__':
     # p0 = np.sqrt(gamma**2 - 1) * A * m_p * c
 
     # dpp = np.random.normal(p0, .5e-3*p0, 16384)-p0
-    # dQxel, dQyel = get_elens_tune(
-        # 0.001, Jx, Jy, ratio=1, simplified=False)
+    dQxel, dQyel = get_elens_tune(
+        0.001, Jx, Jy, ratio=1, simplified=False)
     # dQxel, dQyel = get_pelens_tune(Jz, max_tune_shift=1e-3)
+    # dQxsc, dQysc = get_sc_tune(-0, Jx, Jy, Jz)
     # dQxel, dQyel = get_rfq_tune(Jz, 2.23e9)
     np.save('/home/vgubaidulin/PhD/Data/tmp/dQELx.npy', dQxel)
     np.save('/home/vgubaidulin/PhD/Data/tmp/dQELy.npy', dQyel)
     print('Total elens tune spread: {0:.5f}'.format(max(dQxel)-min(dQxel)))
     print('Maximal elens tune shift: {0:.3e} in x, {1:.3e} in y'.format(max(dQxel), max(dQyel)))
     print('RMS elens tune spread: {0:.2f} [$\Delta Q$] in x, {1:.2f} [\Delta Q] in y'.format(np.sqrt(np.var(dQxel))/max(dQxel), np.sqrt(np.var(dQyel))/max(dQyel)))
-    plot_spread(dQxel, dQyel, normalise=False, filename='elens')
+    rms_x = np.sqrt(np.var(dQxel))
+    rms_y = np.sqrt(np.var(dQyel))
+    # print(min(dQxsc), max(dQxel))
+    # ax = plot_spread((dQxel+dQxsc)/max(dQxel), (dQyel+dQysc)/max(dQyel), normalise=False, filename=None)
+    # ax.ax_joint.plot(np.mean(dQxel)/max(dQxel), np.mean(dQyel)/max(dQyel), marker='o', c='r')
+    # print(np.mean(dQxel)/max(dQxel), np.mean(dQyel)/max(dQyel))
+    # plt.savefig('/home/vgubaidulin/PhD/pelens_sc0.pdf', bbox_inches = 'tight')
+    plt.show()
+    # plot_spread(dQxsc, dQysc, normalise = False, filename='elens')
