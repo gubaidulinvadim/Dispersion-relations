@@ -1,16 +1,13 @@
 import numpy as np
-import scipy as sp
+import os
 from scipy.constants import epsilon_0, c, m_e, m_p, e, pi
-from scipy.special import i0, i1
 from scipy.integrate import quad, dblquad
-from joblib import Parallel, delayed
 from numba import jit
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 import seaborn as sbs
 
 
-from scipy.special import iv
 from tune_calculation import *
 MAX_INTEGRAL_LIMIT = np.infty
 EPSILON = 1e-6
@@ -191,15 +188,19 @@ if __name__ == '__main__':
     gamma = 1+Ekin*e/(m_p*c**2)
     beta = np.sqrt(1-gamma**-2)
     a1 = epsn/gamma * \
-    get_octupole_coefficients(72*175.5, 72*33.6, 63100, 84, 0.32)
+    get_octupole_coefficients(175.5, 33.6, 63100, 84, 0.32)
     a2 = epsn/gamma * \
-    get_octupole_coefficients(72*30.1, 72*178.8, 63100, 84, 0.32)
+    get_octupole_coefficients(30.1, 178.8, 63100, 84, 0.32)
     # a1 = epsn/gamma * \
         # get_octupole_coefficients(p0, 175.5, 33.6, 63100, 84, 0.32)
     # a2 = epsn/gamma * \
         # get_octupole_coefficients(p0, 30.1, 178.8, 63100, 84, 0.32)
     a = (a1 + a2)
     print(a)
+    ax=0.92e-4
+    ay=0.96e-4
+    bxy=0.65e-4
+    a = np.array(((.92e-4, -.65e-4), (-.65e-4, .96e-4)))
     # epsnx = 6e-6
     # epsny = 2.5e-6
     # K3 = -50
@@ -224,17 +225,14 @@ if __name__ == '__main__':
         v2 = 4e9 #2e9
         return get_rfq_tune(Jz, v2)
     # dispersion_solver = TransverseDispersionRelationWithSpaceCharge(tune_dist_func2, 0.2e-4)
-    # dispersion_solver = TransverseDispersionRelation(tune_dist_func)
-    dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcRFQ)
+    dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
+    # dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcRFQ)
     # dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(tune_dist_func_long,  0.0001)
-    # Qs = 1.7e-4
     Qs = 1e-3
-    modes = np.linspace(0, 9, 10)
     legend = []
     mode=0
-    tune_vec = np.linspace(-2.e-2-mode*Qs, 2.e-2+mode*Qs, 10000)
-    # tune_vec = np.linspace(-2.1e-3, 2.1e-3, 200)\
-    for mode in [0, 1, 2, 3, 4, 5, 6]:
+    tune_vec = np.linspace(-2*Qs, 2*Qs, 1000)
+    for mode in [0, ]:
         def func(Jz, mode):
                 return np.power(Jz, np.abs(mode))*np.exp(-Jz)
         def normalisation(mode=0):
@@ -248,45 +246,19 @@ if __name__ == '__main__':
     # sc_real_vec, sc_imag_vec = dispersion_solver.sc_component_dispersion_relation(tune_vec, Qs)
     # stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(real_vec, imag_vec, sc_real_vec, sc_imag_vec)
         stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(real_vec, imag_vec)
-        save_results('/home/vgubaidulin/PhD/Data/DR/rfq(m={0:})/'.format(mode), stab_vec_re, stab_vec_im, tune_vec)
+        folder = '/home/vgubaidulin/PhD/Data/DR/oct(m={0:})/'.format(mode)
+        # os.mkdir(folder)
+        save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
         plt.xlim(-3, 3)
-        inst_i = 3.02e-5 #3.6e-5
+        inst_i = 3.02e-5 
         inst_r = -8.8e-4
-        #-4.5e-4
-        plt.plot(inst_r/Qs, inst_i/Qs, marker='o')
+        # plt.plot(inst_r/Qs, inst_i/Qs, marker='o')
         plt.plot(stab_vec_re/Qs, stab_vec_im/Qs)
-    # for mode in modes:
-    #     tune_vec = np.linspace(-2.e-3+mode*Qs, 2.e-3+mode*Qs, 500)
-    #     real_vec, imag_vec = dispersion_solver.dispersion_relation(tune_vec, Qs, mode=mode)
-    #     stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
-    #         real_vec, imag_vec)
-    #     plt.plot(stab_vec_re/Qs, stab_vec_im/Qs, marker=None)
-    #     legend.append('Mode {}'.format(int(mode)))
-    # ratios = np.linspace(0., 0.6, 1)
-    # for ratio in ratios:
-    #     tune_vec = np.linspace(-5e-3, 5e-3, 5000)
-    #     dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(
-    #         tune_dist_func_long, ratio*1e-3)
-    #     real_vec, imag_vec = dispersion_solver.dispersion_relation(
-    #         tune_vec, Qs)
-    #     sc_real_vec, sc_imag_vec = dispersion_solver.sc_component_dispersion_relation(
-    #         tune_vec, Qs)
-    #     stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
-    #         real_vec, imag_vec, sc_real_vec, sc_imag_vec)
-    #     plt.plot(stab_vec_re/1e-3, stab_vec_im/1e-3, marker=None)
-    #     legend = ('Compensation ratio: {0:.2f}'.format(ratio),)
-    # plt.xlim(-6, 5)
-    # plt.ylim(0, 0.45)
+
     plt.legend(legend, loc='upper left')
-    # plt.xlabel('$\Im\Delta Q\cdot 10^{-3}$')
-    # plt.ylabel('$\Re\Delta Q\cdot 10^{-3}$')
     plt.xlabel('$\Im\Delta Q$')
     plt.ylabel('$\Re\Delta Q$')
     
-    # Qx_inst = -2e-4
-    # Qy_inst = 2.2e-5
-    # plt.plot(Qx_inst/1e-3, Qy_inst/1e-3, marker='*', label='Instability for Q\'=1.2')
-    # plt.legend(loc='upper right')
     plt.tight_layout()
     # plt.savefig('/home/vgubaidulin/PhD/Results/octSIS100_opp.pdf')
     plt.show()
