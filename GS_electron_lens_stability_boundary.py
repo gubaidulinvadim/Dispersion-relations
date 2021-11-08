@@ -38,9 +38,9 @@ if __name__ == '__main__':
     ax.xaxis.set_major_locator(ticker.MultipleLocator(base=2))
     ax.minorticks_on()
     ax.set_xlabel(
-        '$\Re{\Delta Q_{\mathrm{coh}}}$ $[\delta Q_{\mathrm{s}}]$', size=30)
+        '$\Re{\Delta Q_{\mathrm{coh}}}$ $[Q_{\mathrm{s}}]$', size=30)
     ax.set_ylabel(
-        '$\Im{\Delta Q_{\mathrm{coh}}}$ $[\delta Q_{\mathrm{s}}]$', size=30)
+        '$\Im{\Delta Q_{\mathrm{coh}}}$ $[Q_{\mathrm{s}}]$', size=30)
     ax.set_xlim(-3, 3)
     ax.set_ylim(0, .15)
     plt.plot(stab_vec_re/Qs, stab_vec_im/Qs, c=col)
