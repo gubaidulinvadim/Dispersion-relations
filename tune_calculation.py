@@ -162,7 +162,7 @@ def plot_spread(dQx, dQy, filename=None, normalise=True):
                                                                                                  # 'hist': True,
                                                                                                  # 'hist_kws': {'density': True}
                                                                                                  },
-                       ratio=3, xlim=(-0.1, 7), ylim=(-.1, 7))
+                       ratio=3, xlim=(-5, 5), ylim=(-5, 5))
     # / \delta Q_{rms}$')
     ax.ax_joint.set_xlabel(r'$\Delta Q_x/\Delta Q_\mathrm{RMS}$')
     # / \delta Q_{rms}$')

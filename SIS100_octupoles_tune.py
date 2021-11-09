@@ -26,6 +26,6 @@ dQx, dQy = dQ_oct
 dQrmsx = np.sqrt(np.var(dQx))
 dQrmsy = np.sqrt(np.var(dQy))
 print('RMS tune spread values: ({0:.3f}, {1:.3f})'.format(dQrmsx, dQrmsy))
-plot_spread(dQx, dQy, normalise=False, filename=None)
+plot_spread(dQx, dQy, normalise=True, filename=None)
 plt.savefig('Results/'+'SIS100OCT_K3={0:}.pdf'.format(K3), bbox_inches='tight')
 plt.show()
