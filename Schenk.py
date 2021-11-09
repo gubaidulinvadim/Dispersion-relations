@@ -58,33 +58,48 @@ def H(Jz: float, p: int, l: int):
 
 
 if __name__ == '__main__':
+    sbs.set(rc={'figure.figsize': (8.3, 5.2),
+                'text.usetex': True,
+                'font.family': 'serif',
+                'font.size': 20,
+                'axes.linewidth': 2,
+                'lines.linewidth': 3,
+                'legend.fontsize': 16,
+                'legend.numpoints': 1, },
+            style='ticks',
+            palette='colorblind',
+            context='talk')
     Jz = 1.0
     assert (Q_average_detuning(Jz) - 1/(2*pi)*quad(Q_detuning, 0, 2 *
                                                    pi, args=(Jz,))[0] < EPSILON), 'Detuning implemented incorrectly'
-    Jz = np.linspace(0, 3, 2)
+    Jz = np.linspace(0, 3, 20)
     sigma_z = 0.06
     beta_z = 815.6
     Jz *= sigma_z**2/(2*beta_z)
-    sbs.color_palette('colorblind')
+    sbs.set_palette('colorblind')
     # print(max(Jz), 3*sigma_z**2/(2*beta_z))
     # phi = np.linspace(0, 2*pi, 1000)
     # Jz = 1
     # plt.plot(phi, B(B_integrand, Jz, phi))
     time_start = time.process_time()
-    Hr, Hi = H(Jz, p=10, l=0)
+    p = 0
+    l = 1
+    Hr, Hi = H(Jz, p=p, l=l)
     time_elapsed = time.process_time()-time_start
     print('Time elapsed: {0:.2e}'.format(time_elapsed))
-    plt.plot(Jz/(sigma_z**2/(2*beta_z)), 1-Hr, c='b',
+    plt.plot(Jz/(sigma_z**2/(2*beta_z)), Hr, c='b',
              linewidth=2, marker='o', markersize=2)
     omega_0 = c/CIRCUMFERENCE
     Q_s = 1.74e-3
     Q_X = 60.28
     omega_s = omega_0*Q_s
-    p = 10
-    l = 0
+
     omega_p = p*omega_0+Q_X*omega_0+l*omega_s
     plt.plot(Jz/(sigma_z**2/(2*beta_z)),
-             1-j0(np.sqrt(2*Jz*beta_z)/c*(omega_p)), c='r', linewidth=1, marker='o', markersize=1)
-    plt.plot(Jz/(sigma_z**2/(2*beta_z)), Hi, c='b', linestyle='dashed')
-
+             jv(l, np.sqrt(2*Jz*beta_z)/c*(omega_p)), c='r', linewidth=1, marker='o', markersize=1)
+    plt.plot(Jz/(sigma_z**2/(2*beta_z)), Hi,
+             c='b', linestyle='dashed', marker='o', markersize=1, alpha=0.5)
+    plt.xlabel('$J_z$')
+    plt.ylabel('$H(J_z)$')
+    plt.savefig('Results/'+'H_{0:}.pdf'.format(l), bbox_inches='tight')
     plt.show()
