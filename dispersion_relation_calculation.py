@@ -9,7 +9,7 @@ import seaborn as sbs
 
 
 from tune_calculation import *
-MAX_INTEGRAL_LIMIT = np.infty
+MAX_INTEGRAL_LIMIT = 16  # np.infty
 EPSILON = 1e-6
 
 
@@ -97,7 +97,7 @@ class LongitudinalDispersionRelation(TransverseDispersionRelation):
 
     def dispersion_integrand(self, Jz, tune, Qs, mode=0):
         tune_x, tune_y = self.function(Jz)
-        return self.distribution_func(Jz)*Jz**(mode)/(tune-tune_x-mode*Qs+1j*EPSILON)
+        return self.distribution_func(Jz)*Jz**(np.sqrt(mode**2))/(tune-tune_x-mode*Qs+1j*EPSILON)
 
     def compute_real_part(self, tune, Qs, mode=0):
         r = quad(self.real_part_of_integrand, 0.,
@@ -256,21 +256,19 @@ if __name__ == '__main__':
         # return tune_dist_func(J_x, J_y)+tune_dist_func2(J_x, J_y)
 
     def tune_dist_funcPEL(Jz):
-        max_tune_shift = 1e-3
-        return get_pelens_tune(Jz, max_tune_shift)
+        return get_pelens_tune(Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)
 
     def tune_dist_funcRFQ(Jz):
         v2 = 4e9  # 2e9
         return get_rfq_tune(Jz, v2)
     # dispersion_solver = TransverseDispersionRelationWithSpaceCharge(tune_dist_func2, 0.2e-4)
-    dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
-    # dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcRFQ)
+    # dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
+    dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcPEL)
     # dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(tune_dist_func_long,  0.0001)
     Qs = 1e-3
     legend = []
-    mode = 0
-    tune_vec = np.linspace(-2*Qs, 2*Qs, 50)
-    for mode in [0, ]:
+    tune_vec = np.linspace(-5*Qs, 5*Qs, 500)
+    for mode in [-1, 1]:
         def func(Jz, mode):
             return np.power(Jz, np.abs(mode))*np.exp(-Jz)
 
@@ -287,15 +285,11 @@ if __name__ == '__main__':
     # stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(real_vec, imag_vec, sc_real_vec, sc_imag_vec)
         stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
             real_vec, imag_vec)
-        folder = '/home/vgubaidulin/PhD/Data/DR/oct(m={0:})/'.format(mode)
+        folder = '/home/vgubaidulin/PhD/Data/DR/pelens(m={0:})/'.format(mode)
         # os.mkdir(folder)
         save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
-        plt.xlim(-3, 3)
-        inst_i = 3.02e-5
-        inst_r = -8.8e-4
-        # plt.plot(inst_r/Qs, inst_i/Qs, marker='o')
         plt.plot(stab_vec_re/Qs, stab_vec_im/Qs)
-
+        plt.plot(tune_vec/Qs-mode, stab_vec_im/Qs, linestyle='dashed')
     plt.legend(legend, loc='upper left')
     plt.xlabel('$\Im\Delta Q$')
     plt.ylabel('$\Re\Delta Q$')
