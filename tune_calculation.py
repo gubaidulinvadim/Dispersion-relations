@@ -121,13 +121,13 @@ def get_chroma_tune(dp, Qpx, Qpy, Ekin, A=40):
     return dp*Qpx/p0, dp*Qpy/p0
 
 
-def get_pelens_tune(Jz, max_tune_shift_x, max_tune_shift_y):
+def get_pelens_tune(Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3):
     '''
     @params 
     Jz -- longitudinal action (normalized to the longitudinal beam emittance)
     max_tune_shift -- maximal tune shift from pulsed electron lens                                                                                                                                                                                                                 
     '''
-    dQx = i0(-Jz/4)*np.exp(-Jz/4)
+    dQx = i0(-.25*Jz)*np.exp(-.25*Jz)
     return max_tune_shift_x*dQx, max_tune_shift_y*dQx
 
 

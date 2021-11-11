@@ -1,3 +1,4 @@
+from LHC_constants import *
 import numpy as np
 import scipy as sp
 from scipy.constants import epsilon_0, c, m_e, m_p, e, pi
@@ -12,7 +13,6 @@ import time
 from tune_calculation import *
 MAX_INTEGRAL_LIMIT = 16
 EPSILON = 1e-6
-CIRCUMFERENCE = 27e3
 @np.vectorize
 def Q_detuning(phi: float, Jz: float, dQmax=0.001):
     return dQmax*np.exp(-0.25*Jz*(1-np.cos(2*phi)))
@@ -35,14 +35,9 @@ def B(func: object, Jz: float, phi: float):
 
 @np.vectorize
 def H_integrand(phi: float, Jz: float, p: int, l: int):
-    beta_z = 815.6
-    omega_0 = c/CIRCUMFERENCE
-    Q_s = 1.74e-3
-    Q_X = 60.28
-    omega_s = omega_0*Q_s
-    omega_p = p*omega_0+Q_X*omega_0+l*omega_s
-    JzB = Jz/(sigma_z**2/(2*beta_z))
-    return np.exp(1j*l*phi)*np.exp(-1j*omega_p/c*np.sqrt(2*Jz*beta_z)*np.cos(phi)) * np.exp(-1j/Q_s*B(B_integrand, JzB, phi))
+    omega_p = p*OMEGA_REV+Q_X*OMEGA_REV+l*OMEGA_S
+    JzB = Jz/(SIGMA_Z**2/(2*BETA_Z))
+    return np.exp(1j*l*phi)*np.exp(-1j*omega_p/c*np.sqrt(2*Jz*BETA_Z)*np.cos(phi)) * np.exp(-1j/Q_S*B(B_integrand, JzB, phi))
 
 
 @np.vectorize
@@ -73,33 +68,33 @@ if __name__ == '__main__':
     assert (Q_average_detuning(Jz) - 1/(2*pi)*quad(Q_detuning, 0, 2 *
                                                    pi, args=(Jz,))[0] < EPSILON), 'Detuning implemented incorrectly'
     Jz = np.linspace(0, 3, 20)
-    sigma_z = 0.06
-    beta_z = 815.6
-    Jz *= sigma_z**2/(2*beta_z)
+    # SIGMA_Z = 0.06
+    # BETA_Z = 815.6
+    Jz *= SIGMA_Z**2/(2*BETA_Z)
     sbs.set_palette('colorblind')
-    # print(max(Jz), 3*sigma_z**2/(2*beta_z))
+    # print(max(Jz), 3*SIGMA_Z**2/(2*BETA_Z))
     # phi = np.linspace(0, 2*pi, 1000)
     # Jz = 1
     # plt.plot(phi, B(B_integrand, Jz, phi))
     time_start = time.process_time()
     p = 0
-    l = 1
+    l = 0
+    print('Order of magnitude for longitudinal amplitude: ',
+          SIGMA_Z/(BETA*c)*OMEGA_REV)
+
     Hr, Hi = H(Jz, p=p, l=l)
     time_elapsed = time.process_time()-time_start
     print('Time elapsed: {0:.2e}'.format(time_elapsed))
-    plt.plot(Jz/(sigma_z**2/(2*beta_z)), Hr, c='b',
-             linewidth=2, marker='o', markersize=2)
-    omega_0 = c/CIRCUMFERENCE
-    Q_s = 1.74e-3
-    Q_X = 60.28
-    omega_s = omega_0*Q_s
+    plt.plot(Jz/(SIGMA_Z**2/(2*BETA_Z)), np.sqrt(Hr**2+Hi**2), c='b',
+             linewidth=2, marker='o', markersize=2, label='$|H^0_l(J_z)|$')
 
-    omega_p = p*omega_0+Q_X*omega_0+l*omega_s
-    plt.plot(Jz/(sigma_z**2/(2*beta_z)),
-             jv(l, np.sqrt(2*Jz*beta_z)/c*(omega_p)), c='r', linewidth=1, marker='o', markersize=1)
-    plt.plot(Jz/(sigma_z**2/(2*beta_z)), Hi,
-             c='b', linestyle='dashed', marker='o', markersize=1, alpha=0.5)
-    plt.xlabel('$J_z$')
-    plt.ylabel('$H(J_z)$')
-    plt.savefig('Results/'+'H_{0:}.pdf'.format(l), bbox_inches='tight')
+    omega_p = p*OMEGA_REV+Q_X*OMEGA_REV+l*OMEGA_S
+    plt.plot(Jz/(SIGMA_Z**2/(2*BETA_Z)),
+             np.abs(jv(l, np.sqrt(2*Jz*BETA_Z)/c*(omega_p))), c='r', linewidth=1, marker='o', markersize=1, label='$|J_l(J_z)|$')
+    # plt.plot(Jz/(SIGMA_Z**2/(2*BETA_Z)), Hi,
+    #  c='b', linestyle='dashed', marker='o', markersize=1, alpha=0.5)
+    plt.xlabel('$J_z/\epsilon_z$')
+    plt.ylabel('Specrtal function')
+    plt.legend(frameon=False)
+    plt.savefig('Results/'+'2H_{0:}.pdf'.format(l), bbox_inches='tight')
     plt.show()
