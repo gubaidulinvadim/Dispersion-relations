@@ -16,7 +16,8 @@ if __name__ == '__main__':
     n_particles = int(1e5)
 
     def func(r, mode):
-        return r*np.exp(-r**2/(2*SIGMA_Z**2))*jv(abs(mode), Q_X*OMEGA_REV*r/(BETA*c))**2
+        Jz = .5*(r/SIGMA_Z)**2
+        return np.sqrt(2*Jz)*SIGMA_Z*np.exp(-Jz)*jv(abs(mode), Q_X*OMEGA_REV/(BETA*c)*SIGMA_Z*np.sqrt(2*Jz))**2
     print('Bessel function argument: {0:.2e}'.format(
         Q_X*OMEGA_REV/(BETA*c)*SIGMA_Z))
 
@@ -27,13 +28,13 @@ if __name__ == '__main__':
 
     def tune_dist_funcPEL(r):
         dQmax = 1e-3
-        Jz = (r/SIGMA_Z)**2
+        Jz = .5*(r/SIGMA_Z)**2
         return get_pelens_tune(Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)
     dispersion_solver = LongitudinalDispersionRelation2(
         tune_dist_funcPEL, beta=BETA, beta_z=BETA_Z, omega_betax=OMEGA_REV*Q_X, sigma_z=SIGMA_Z)
     mode = 0
     dQmax = 1e-3
-    tune_vec = np.linspace(-2*dQmax, 2*dQmax, 10000)
+    tune_vec = np.linspace(-.25*dQmax, 1.25*dQmax, 10000)
     real_vec, imag_vec = dispersion_solver.dispersion_relation(
         tune_vec, Q_S, mode=mode)
     real_vec /= N
@@ -54,6 +55,7 @@ if __name__ == '__main__':
     ax.set_ylabel(
         '$\Im{\Delta Q_{\mathrm{coh}}}$ $[Q_{\mathrm{s}}]$', size=30)
     # ax.set_xlim(-3, 3)
+    print(max(imag_vec))
     # ax.set_ylim(0, .15)
     # plt.plot(stab_vec_re/Qs, stab_vec_im/Qs, c=col)
     plt.plot(stab_vec_re/(dQmax), stab_vec_im/(dQmax), c=col)

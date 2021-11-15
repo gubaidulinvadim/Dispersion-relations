@@ -6,9 +6,9 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 import seaborn as sbs
 from scipy.special import jv
-from LHC_constants import *
+from SIS100_constants import *
 from tune_calculation import *
-MAX_INTEGRAL_LIMIT = 16*SIGMA_Z  # np.sqrt(500) * SIGMA_Z
+MAX_INTEGRAL_LIMIT = 8*SIGMA_Z  # *SIGMA_Z  # np.sqrt(500) * SIGMA_Z
 EPSILON = 1e-6
 
 
@@ -109,7 +109,7 @@ class LongitudinalDispersionRelation(TransverseDispersionRelation):
         return i
 
 
-class LongitudinalDispersionRelation2(TransverseDispersionRelation):
+class LongitudinalDispersionRelation2(LongitudinalDispersionRelation):
     def __init__(self, tune_distribution_function, sigma_z, beta_z, omega_betax, beta):
         self.sigma_z = sigma_z
         self.beta_z = beta_z
@@ -125,15 +125,15 @@ class LongitudinalDispersionRelation2(TransverseDispersionRelation):
         tune_x, tune_y = self.function(r)
         return r*self.distribution_func(r)*(jv(abs(mode), self.omega_betax*r/(self.beta*c)))**2/(tune-tune_x-mode*Qs+1j*EPSILON)
 
-    def compute_real_part(self, tune, Qs, mode=0):
-        r = quad(self.real_part_of_integrand, 0.,
-                 MAX_INTEGRAL_LIMIT, args=(tune, Qs, mode))[0]
-        return r
+    # def compute_real_part(self, tune, Qs, mode=0):
+    #     r = quad(self.real_part_of_integrand, 0.,
+    #              MAX_INTEGRAL_LIMIT, args=(tune, Qs, mode))[0]
+    #     return r
 
-    def compute_imag_part(self, tune, Qs, mode=0):
-        i = quad(self.imaginary_part_of_integrand, 0.,
-                 MAX_INTEGRAL_LIMIT, args=(tune, Qs, mode))[0]
-        return i
+    # def compute_imag_part(self, tune, Qs, mode=0):
+    #     i = quad(self.imaginary_part_of_integrand, 0.,
+    #              MAX_INTEGRAL_LIMIT, args=(tune, Qs, mode))[0]
+    #     return i
 
 
 class TransverseDispersionRelationWithSpaceCharge(TransverseDispersionRelation):
@@ -250,12 +250,6 @@ if __name__ == '__main__':
     p0 = Ekin*e/c
     gamma = 1+Ekin*e/(m_p*c**2)
     beta = np.sqrt(1-gamma**-2)
-    a1 = epsn/gamma * \
-        get_octupole_coefficients(175.5, 33.6, 63100, 84, 0.32)
-    a2 = epsn/gamma * \
-        get_octupole_coefficients(30.1, 178.8, 63100, 84, 0.32)
-    a = (a1 + a2)
-    print(a)
     ax = 0.92e-4
     ay = 0.96e-4
     bxy = 0.65e-4
@@ -266,7 +260,7 @@ if __name__ == '__main__':
         return get_octupole_tune(-a, J)
 
     def tune_dist_funcEL(J_x, J_y):
-        return get_elens_tune_for_round_beam_simplified(1e-2, J_x, J_y)
+        return get_elens_tune_for_round_beam_simplified(1e-3, J_x, J_y)
 
     def tune_dist_funcPEL(Jz):
         return get_pelens_tune(Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)

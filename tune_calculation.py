@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as ss
 from numba import jit
 from scipy.constants import pi, c, m_p, e
-from scipy.special import i0, i1, j0
+from scipy.special import i0e, i0, i1, j0
 from scipy.integrate import quad
 from matplotlib import pyplot as plt
 import seaborn as sbs
@@ -127,7 +127,7 @@ def get_pelens_tune(Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3):
     Jz -- longitudinal action (normalized to the longitudinal beam emittance)
     max_tune_shift -- maximal tune shift from pulsed electron lens                                                                                                                                                                                                                 
     '''
-    dQx = i0(-.25*Jz)*np.exp(-.25*Jz)
+    dQx = i0e(-.25*Jz)  # i0(-.25*Jz)*np.exp(-.25*Jz)
     return max_tune_shift_x*dQx, max_tune_shift_y*dQx
 
 

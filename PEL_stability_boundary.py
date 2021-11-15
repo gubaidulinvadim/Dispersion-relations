@@ -17,15 +17,15 @@ if __name__ == '__main__':
     def tune_dist_funcPEL(J_z):
         return get_pelens_tune(J_z, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)
     dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcPEL)
-    Qs = 1.74e-3
+    Q_S = 1.74e-3
     mode = 1
-    tune_vec = np.linspace(-(Qs+np.abs(mode)*Qs), np.abs(mode)*Qs+Qs, 500)
+    tune_vec = np.linspace(-(Q_S+np.abs(mode)*Q_S), np.abs(mode)*Q_S+Q_S, 500)
     real_vec, imag_vec = dispersion_solver.dispersion_relation(
-        tune_vec, Qs, mode=mode)
+        tune_vec, Q_S, mode=mode)
     stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
         real_vec, imag_vec)
     folder = '/home/vgubaidulin/PhD/Data/DR/pelens(m={0:})/'.format(mode)
-    # save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
+    save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
     palette = sbs.color_palette('RdBu')
     col = palette[-1]
     fig, ax = plt.subplots(1, 1)
@@ -41,7 +41,7 @@ if __name__ == '__main__':
         '$\Im{\Delta Q_{\mathrm{coh}}}$ $[Q_{\mathrm{s}}]$', size=30)
     ax.set_xlim(-.5, .5)
     ax.set_ylim(0, .15)
-    plt.plot(stab_vec_re/Qs, stab_vec_im/Qs, c=col)
+    plt.plot(stab_vec_re/Q_S, stab_vec_im/Q_S, c=col)
     plt.savefig(
         'Results/'+'LHC_PEL_DR(m={0:}).pdf'.format(mode), bbox_inches='tight')
     plt.show()
