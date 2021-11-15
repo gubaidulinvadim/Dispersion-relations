@@ -1,15 +1,14 @@
 import numpy as np
-from numpy.lib.type_check import real
 from scipy.constants import c, m_p, e, pi
 from scipy.integrate import quad, dblquad
 from numba import jit
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 import seaborn as sbs
-
-
+from scipy.special import jv
+from LHC_constants import *
 from tune_calculation import *
-MAX_INTEGRAL_LIMIT = 16  # np.infty
+MAX_INTEGRAL_LIMIT = 16*SIGMA_Z  # np.sqrt(500) * SIGMA_Z
 EPSILON = 1e-6
 
 
@@ -98,6 +97,33 @@ class LongitudinalDispersionRelation(TransverseDispersionRelation):
     def dispersion_integrand(self, Jz, tune, Qs, mode=0):
         tune_x, tune_y = self.function(Jz)
         return self.distribution_func(Jz)*Jz**(np.sqrt(mode**2))/(tune-tune_x-mode*Qs+1j*EPSILON)
+
+    def compute_real_part(self, tune, Qs, mode=0):
+        r = quad(self.real_part_of_integrand, 0.,
+                 MAX_INTEGRAL_LIMIT, args=(tune, Qs, mode))[0]
+        return r
+
+    def compute_imag_part(self, tune, Qs, mode=0):
+        i = quad(self.imaginary_part_of_integrand, 0.,
+                 MAX_INTEGRAL_LIMIT, args=(tune, Qs, mode))[0]
+        return i
+
+
+class LongitudinalDispersionRelation2(TransverseDispersionRelation):
+    def __init__(self, tune_distribution_function, sigma_z, beta_z, omega_betax, beta):
+        self.sigma_z = sigma_z
+        self.beta_z = beta_z
+        self.omega_betax = omega_betax
+        self.beta = beta
+        super().__init__(tune_distribution_function)
+
+    def distribution_func(self, r):
+        a = r/(np.sqrt(2)*self.sigma_z)
+        return np.exp(-a**2)
+
+    def dispersion_integrand(self, r, tune, Qs, mode=0):
+        tune_x, tune_y = self.function(r)
+        return r*self.distribution_func(r)*(jv(abs(mode), self.omega_betax*r/(self.beta*c)))**2/(tune-tune_x-mode*Qs+1j*EPSILON)
 
     def compute_real_part(self, tune, Qs, mode=0):
         r = quad(self.real_part_of_integrand, 0.,
@@ -228,22 +254,12 @@ if __name__ == '__main__':
         get_octupole_coefficients(175.5, 33.6, 63100, 84, 0.32)
     a2 = epsn/gamma * \
         get_octupole_coefficients(30.1, 178.8, 63100, 84, 0.32)
-    # a1 = epsn/gamma * \
-    # get_octupole_coefficients(p0, 175.5, 33.6, 63100, 84, 0.32)
-    # a2 = epsn/gamma * \
-    # get_octupole_coefficients(p0, 30.1, 178.8, 63100, 84, 0.32)
     a = (a1 + a2)
     print(a)
     ax = 0.92e-4
     ay = 0.96e-4
     bxy = 0.65e-4
     a = np.array(((.92e-4, -.65e-4), (-.65e-4, .96e-4)))
-    # epsnx = 6e-6
-    # epsny = 2.5e-6
-    # K3 = -50
-    # a1 = epsnx/gamma/beta*get_octupole_coefficients(5.8, 17.7, K3, 6, 0.75)
-    # a2 = epsny/gamma/beta*get_octupole_coefficients(17.2, 5.8, K3, 6, 0.75)
-    # a = (a1+a2)
     @jit(nogil=True)
     def tune_dist_funcOCT(J_x, J_y):
         J = np.array((J_x, J_y))
@@ -251,9 +267,6 @@ if __name__ == '__main__':
 
     def tune_dist_funcEL(J_x, J_y):
         return get_elens_tune_for_round_beam_simplified(1e-2, J_x, J_y)
-
-    # def tune_dist_func3(J_x, J_y):
-        # return tune_dist_func(J_x, J_y)+tune_dist_func2(J_x, J_y)
 
     def tune_dist_funcPEL(Jz):
         return get_pelens_tune(Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)
@@ -265,10 +278,9 @@ if __name__ == '__main__':
     # dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
     dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcPEL)
     # dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(tune_dist_func_long,  0.0001)
-    Qs = 1e-3
     legend = []
-    tune_vec = np.linspace(-5*Qs, 5*Qs, 500)
-    for mode in [-1, 1]:
+    tune_vec = np.linspace(-Q_S, Q_S, 500)
+    for mode in [0, ]:
         def func(Jz, mode):
             return np.power(Jz, np.abs(mode))*np.exp(-Jz)
 
@@ -278,7 +290,7 @@ if __name__ == '__main__':
 
         print('Normalisation for mode {0:} is: {1:.2e}'.format(mode, N))
         real_vec, imag_vec = dispersion_solver.dispersion_relation(
-            tune_vec, Qs, mode=mode)
+            tune_vec, Q_S, mode=mode)
         real_vec /= N
         imag_vec /= N
     # sc_real_vec, sc_imag_vec = dispersion_solver.sc_component_dispersion_relation(tune_vec, Qs)
@@ -288,8 +300,7 @@ if __name__ == '__main__':
         folder = '/home/vgubaidulin/PhD/Data/DR/pelens(m={0:})/'.format(mode)
         # os.mkdir(folder)
         save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
-        plt.plot(stab_vec_re/Qs, stab_vec_im/Qs)
-        plt.plot(tune_vec/Qs-mode, stab_vec_im/Qs, linestyle='dashed')
+        plt.plot(stab_vec_re/Q_S, stab_vec_im/Q_S)
     plt.legend(legend, loc='upper left')
     plt.xlabel('$\Im\Delta Q$')
     plt.ylabel('$\Re\Delta Q$')
