@@ -1,5 +1,8 @@
+from numpy.lib.type_check import real
 from dispersion_relation_calculation import *
-from SIS100_constants import *
+from LHC_constants import *
+MAX_INTEGRAL_LIMIT = 16*SIGMA_Z
+EPSILON = 1e-6
 sbs.set(rc={'figure.figsize': (8.3, 5.2),
             'text.usetex': True,
             'font.family': 'serif',
@@ -12,18 +15,22 @@ sbs.set(rc={'figure.figsize': (8.3, 5.2),
         palette='RdBu',
         context='talk',
         font_scale=1.4)
+Q_X_FRAC = Q_X-np.floor(Q_X)
+OMEGA_X = OMEGA_REV*Q_X
 if __name__ == '__main__':
     n_particles = int(1e5)
 
     def func(r, mode):
         Jz = .5*(r/SIGMA_Z)**2
-        return np.sqrt(2*Jz)*SIGMA_Z*np.exp(-Jz)*jv(abs(mode), Q_X*OMEGA_REV/(BETA*c)*SIGMA_Z*np.sqrt(2*Jz))**2
+        a = OMEGA_X*SIGMA_Z/(BETA*c)
+        return np.sqrt(2*Jz)*np.exp(-Jz)*jv(abs(mode), a*np.sqrt(2*Jz))**2
     print('Bessel function argument: {0:.2e}'.format(
-        Q_X*OMEGA_REV/(BETA*c)*SIGMA_Z))
+        OMEGA_X/(BETA*c)*SIGMA_Z))
+    mode = 0
 
     def normalisation(mode=0):
         return quad(func, 0, np.infty, args=(mode,))[0]
-    N = normalisation(0)
+    N = normalisation(mode)
     print('Dispersion integral normalisation: {0:.2e}'.format(N))
 
     def tune_dist_funcPEL(r):
@@ -31,14 +38,16 @@ if __name__ == '__main__':
         Jz = .5*(r/SIGMA_Z)**2
         return get_pelens_tune(Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)
     dispersion_solver = LongitudinalDispersionRelation2(
-        tune_dist_funcPEL, beta=BETA, beta_z=BETA_Z, omega_betax=OMEGA_REV*Q_X, sigma_z=SIGMA_Z)
-    mode = 0
+        tune_dist_funcPEL, beta=BETA, beta_z=BETA_Z, omega_betax=OMEGA_X, sigma_z=SIGMA_Z)
     dQmax = 1e-3
     tune_vec = np.linspace(-.25*dQmax, 1.25*dQmax, 10000)
     real_vec, imag_vec = dispersion_solver.dispersion_relation(
         tune_vec, Q_S, mode=mode)
     real_vec /= N
     imag_vec /= N
+    np.save('/home/vgubaidulin/PhD/Data/real_vec.npy', real_vec)
+    np.save('/home/vgubaidulin/PhD/Data/imag_vec.npy', imag_vec)
+
     stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
         real_vec, imag_vec)
     folder = '/home/vgubaidulin/PhD/Data/DR/PELSIS100/'.format(mode)

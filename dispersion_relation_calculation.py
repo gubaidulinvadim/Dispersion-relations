@@ -6,9 +6,9 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 import seaborn as sbs
 from scipy.special import jv
-from SIS100_constants import *
+from LHC_constants import *
 from tune_calculation import *
-MAX_INTEGRAL_LIMIT = 8*SIGMA_Z  # *SIGMA_Z  # np.sqrt(500) * SIGMA_Z
+MAX_INTEGRAL_LIMIT = 16*SIGMA_Z  # *SIGMA_Z  # np.sqrt(500) * SIGMA_Z
 EPSILON = 1e-6
 
 
@@ -96,7 +96,7 @@ class LongitudinalDispersionRelation(TransverseDispersionRelation):
 
     def dispersion_integrand(self, Jz, tune, Qs, mode=0):
         tune_x, tune_y = self.function(Jz)
-        return self.distribution_func(Jz)*Jz**(np.sqrt(mode**2))/(tune-tune_x-mode*Qs+1j*EPSILON)
+        return self.distribution_func(Jz)*Jz**(np.sqrt(mode**2))/(tune-tune_x-1e-3-mode*Qs+1j*EPSILON)
 
     def compute_real_part(self, tune, Qs, mode=0):
         r = quad(self.real_part_of_integrand, 0.,
@@ -115,15 +115,17 @@ class LongitudinalDispersionRelation2(LongitudinalDispersionRelation):
         self.beta_z = beta_z
         self.omega_betax = omega_betax
         self.beta = beta
+        self.a = self.omega_betax*self.sigma_z/(self.beta*c)
         super().__init__(tune_distribution_function)
 
     def distribution_func(self, r):
-        a = r/(np.sqrt(2)*self.sigma_z)
-        return np.exp(-a**2)
+        Jz = .5*(r/self.sigma_z)**2
+        return np.exp(-Jz)
 
     def dispersion_integrand(self, r, tune, Qs, mode=0):
         tune_x, tune_y = self.function(r)
-        return r*self.distribution_func(r)*(jv(abs(mode), self.omega_betax*r/(self.beta*c)))**2/(tune-tune_x-mode*Qs+1j*EPSILON)
+        Jz = .5*(r/self.sigma_z)**2
+        return np.sqrt(2*Jz)*self.distribution_func(r)*jv(abs(mode), self.a*np.sqrt(2*Jz))**2/(tune-tune_x-mode*Qs+1j*EPSILON)
 
     # def compute_real_part(self, tune, Qs, mode=0):
     #     r = quad(self.real_part_of_integrand, 0.,

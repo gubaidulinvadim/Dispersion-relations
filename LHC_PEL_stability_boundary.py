@@ -16,8 +16,9 @@ if __name__ == '__main__':
     n_particles = int(1e5)
 
     def func(r, mode):
-        return r*np.exp(-r**2/(2*SIGMA_Z**2))*jv(abs(mode), Q_X*OMEGA_REV*r/(BETA*c))**2
-
+        Jz = .5*(r/SIGMA_Z)**2
+        a = Q_X*OMEGA_REV*SIGMA_Z/(BETA*c)
+        return np.sqrt(2*Jz)*SIGMA_Z*np.exp(-Jz)*jv(abs(mode), a*np.sqrt(2*Jz))**2
     print('Bessel function argument: {0:.2e}'.format(
         Q_X*OMEGA_REV/(BETA*c)*SIGMA_Z))
 
