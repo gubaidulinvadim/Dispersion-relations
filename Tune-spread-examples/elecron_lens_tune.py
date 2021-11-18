@@ -9,7 +9,8 @@ if __name__ == '__main__':
     rms_x, rms_y = np.sqrt(np.var(dQxel)), np.sqrt(np.var(dQyel))
     palette = sbs.color_palette('RdBu')
     ax = plot_spread(dQxel, dQyel, normalise=True, filename=None)
-    ax.ax_joint.plot(np.mean(dQxel)/rms_x, np.mean(dQyel)/rms_y, marker='o', c='darkgreen', label='Lens coherent tune shift')
+    ax.ax_joint.plot(np.mean(dQxel)/rms_x, np.mean(dQyel)/rms_y,
+                     marker='o', c='darkgreen', label='Lens coherent tune shift')
     ax.ax_joint.plot(0, 0, marker='o', c='darkgrey', label='Machine tune')
 
     ax.ax_joint.legend(loc='lower right', frameon=False)

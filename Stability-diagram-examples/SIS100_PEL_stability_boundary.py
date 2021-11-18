@@ -1,6 +1,6 @@
 from numpy.lib.type_check import real
 from dispersion_relation_calculation import *
-from LHC_constants import *
+from SIS100_constants import *
 MAX_INTEGRAL_LIMIT = 16*SIGMA_Z
 EPSILON = 1e-6
 sbs.set(rc={'figure.figsize': (8.3, 5.2),
@@ -23,9 +23,23 @@ if __name__ == '__main__':
     def func(r, mode):
         Jz = .5*(r/SIGMA_Z)**2
         a = OMEGA_X*SIGMA_Z/(BETA*c)
-        return np.sqrt(2*Jz)*np.exp(-Jz)*jv(abs(mode), a*np.sqrt(2*Jz))**2
+        Bessel_func = jv(abs(mode), a*np.sqrt(2*Jz))
+        return np.sqrt(2*Jz)*np.exp(-Jz)*np.sign(Bessel_func)*Bessel_func**2
+    a = OMEGA_X/(BETA*c)*SIGMA_Z
     print('Bessel function argument: {0:.2e}'.format(
-        OMEGA_X/(BETA*c)*SIGMA_Z))
+        a))
+    r = np.linspace(0, 3*SIGMA_Z, 1000)
+    sbs.set_palette('colorblind')
+    plt.plot(r/SIGMA_Z, func(r, 0), c='b')
+    plt.plot(r/SIGMA_Z, r/SIGMA_Z*np.exp(-(r/SIGMA_Z)**2) *
+             jv(0, a*r/SIGMA_Z), c='b', linestyle='dashed')
+    plt.plot(r/SIGMA_Z, jv(0, a*r/SIGMA_Z), c='r')
+    plt.plot(r/SIGMA_Z, jv(0, a*r/SIGMA_Z)**2, c='r', linestyle='dashed')
+
+    plt.axhline(0)
+    plt.ylim(-.4, 1.)
+    plt.xlim(0, 3)
+    plt.show()
     mode = 0
 
     def normalisation(mode=0):
@@ -40,7 +54,7 @@ if __name__ == '__main__':
     dispersion_solver = LongitudinalDispersionRelation2(
         tune_dist_funcPEL, beta=BETA, beta_z=BETA_Z, omega_betax=OMEGA_X, sigma_z=SIGMA_Z)
     dQmax = 1e-3
-    tune_vec = np.linspace(-.25*dQmax, 1.25*dQmax, 10000)
+    tune_vec = np.linspace(-2.25*dQmax, 1.25*dQmax, 10000)
     real_vec, imag_vec = dispersion_solver.dispersion_relation(
         tune_vec, Q_S, mode=mode)
     real_vec /= N
@@ -64,9 +78,8 @@ if __name__ == '__main__':
     ax.set_ylabel(
         '$\Im{\Delta Q_{\mathrm{coh}}}$ $[Q_{\mathrm{s}}]$', size=30)
     # ax.set_xlim(-3, 3)
-    print(max(imag_vec))
     # ax.set_ylim(0, .15)
     # plt.plot(stab_vec_re/Qs, stab_vec_im/Qs, c=col)
-    plt.plot(stab_vec_re/(dQmax), stab_vec_im/(dQmax), c=col)
+    plt.plot(stab_vec_re/(dQmax), np.abs(stab_vec_im/(dQmax)), c=col)
     plt.savefig('Results/'+'SIS100_PEL_DR2.pdf', bbox_inches='tight')
     plt.show()
