@@ -6,9 +6,9 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 import seaborn as sbs
 from scipy.special import jv
-from SIS100_constants import *
+from parameters.SIS100_constants import *
 from tune_calculation import *
-MAX_INTEGRAL_LIMIT = 16*SIGMA_Z  # *SIGMA_Z  # np.sqrt(500) * SIGMA_Z
+MAX_INTEGRAL_LIMIT = 2.4048/2*SIGMA_Z  # *SIGMA_Z  # np.sqrt(500) * SIGMA_Z
 EPSILON = 1e-6
 
 
@@ -126,7 +126,7 @@ class LongitudinalDispersionRelation2(LongitudinalDispersionRelation):
         tune_x, tune_y = self.function(r)
         Jz = .5*(r/self.sigma_z)**2
         Bessel_func = jv(abs(mode), self.a*np.sqrt(2*Jz))
-        return np.sqrt(2*Jz)*self.distribution_func(r)*np.sign(Bessel_func)*Bessel_func**2/(tune-tune_x-mode*Qs+1j*EPSILON)
+        return np.sqrt(2*Jz)*self.distribution_func(r)*Bessel_func**2/(tune-tune_x-mode*Qs+1j*EPSILON)
 
 
 class TransverseDispersionRelationWithSpaceCharge(TransverseDispersionRelation):

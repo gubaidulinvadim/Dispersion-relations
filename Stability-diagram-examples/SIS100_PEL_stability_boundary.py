@@ -1,7 +1,7 @@
 from numpy.lib.type_check import real
+from parameters.SIS100_constants import *
 from dispersion_relation_calculation import *
-from SIS100_constants import *
-MAX_INTEGRAL_LIMIT = 16*SIGMA_Z
+MAX_INTEGRAL_LIMIT = 2.4048/2*SIGMA_Z
 EPSILON = 1e-6
 sbs.set(rc={'figure.figsize': (8.3, 5.2),
             'text.usetex': True,
@@ -24,26 +24,21 @@ if __name__ == '__main__':
         Jz = .5*(r/SIGMA_Z)**2
         a = OMEGA_X*SIGMA_Z/(BETA*c)
         Bessel_func = jv(abs(mode), a*np.sqrt(2*Jz))
-        return np.sqrt(2*Jz)*np.exp(-Jz)*np.sign(Bessel_func)*Bessel_func**2
+        return np.sqrt(2*Jz)*np.exp(-Jz)*Bessel_func**2
     a = OMEGA_X/(BETA*c)*SIGMA_Z
     print('Bessel function argument: {0:.2e}'.format(
         a))
-    r = np.linspace(0, 3*SIGMA_Z, 1000)
+    r = np.linspace(0, 2.4048/2*SIGMA_Z, 1000)
     sbs.set_palette('colorblind')
     plt.plot(r/SIGMA_Z, func(r, 0), c='b')
-    plt.plot(r/SIGMA_Z, r/SIGMA_Z*np.exp(-(r/SIGMA_Z)**2) *
-             jv(0, a*r/SIGMA_Z), c='b', linestyle='dashed')
-    plt.plot(r/SIGMA_Z, jv(0, a*r/SIGMA_Z), c='r')
-    plt.plot(r/SIGMA_Z, jv(0, a*r/SIGMA_Z)**2, c='r', linestyle='dashed')
-
-    plt.axhline(0)
+    plt.axhline(0, linestyle='dashed')
     plt.ylim(-.4, 1.)
     plt.xlim(0, 3)
     plt.show()
     mode = 0
 
     def normalisation(mode=0):
-        return quad(func, 0, np.infty, args=(mode,))[0]
+        return quad(func, 0, 2.4048/2*SIGMA_Z, args=(mode,))[0]
     N = normalisation(mode)
     print('Dispersion integral normalisation: {0:.2e}'.format(N))
 
