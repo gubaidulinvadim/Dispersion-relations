@@ -2,3 +2,4 @@
 *.pyc
 __pycache__/
 .ipynb_checkpoints/
+__pycache__/dispersion_relation_calculation.cpython-37.pyc
