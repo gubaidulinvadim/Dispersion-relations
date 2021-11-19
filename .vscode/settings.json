@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/home/vgubaidulin/anaconda3/bin/python"
+  "python.pythonPath": "/home/vgubaidulin/anaconda3/bin/python",
+  "python.analysis.extraPaths": ["./parameters"]
 }
