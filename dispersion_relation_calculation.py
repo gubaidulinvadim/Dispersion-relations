@@ -247,6 +247,7 @@ if __name__ == '__main__':
     ay = 0.96e-4
     bxy = 0.65e-4
     a = np.array(((.92e-4, -.65e-4), (-.65e-4, .96e-4)))
+
     @jit(nogil=True)
     def tune_dist_funcOCT(J_x, J_y):
         J = np.array((J_x, J_y))
@@ -293,5 +294,4 @@ if __name__ == '__main__':
     plt.ylabel('$\Re\Delta Q$')
 
     plt.tight_layout()
-    # plt.savefig('/home/vgubaidulin/PhD/Results/octSIS100_opp.pdf')
     plt.show()
