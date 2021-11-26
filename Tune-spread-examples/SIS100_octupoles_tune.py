@@ -51,8 +51,8 @@ if __name__ == '__main__':
     gamma = 1+Ekin*e/(m_p*c**2)
     beta = np.sqrt(1-gamma**-2)
     K3 = 50
-    epsnx = 0.25*48e-6  # 0.25*35e-6
-    epsny = 0.25*48e-6  # 0.25*15e-6
+    epsnx = 0.25*35e-6
+    epsny = 0.25*15e-6
     a1 = get_octupole_coefficients(5.8, 17.2, K3, 6, 0.75)
     a2 = get_octupole_coefficients(17.7, 5.8, K3, 6, 0.75)
     a = epsnx*a1+epsny*a2
