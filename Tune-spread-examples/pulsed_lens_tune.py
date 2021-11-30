@@ -34,16 +34,12 @@ def plot_spread(dQx, dQy, normalise=True):
 if __name__ == '__main__':
     n_particles = int(1e7)
     Jz = trunc_exp_rv(low=0, high=2.5**2, scale=1.0, size=n_particles)
-    # r = np.random.normal(loc=0, scale=SIGMA_Z, size=n_particles)
 
     def tune_dist_funcPEL(r):
         dQmax = 1e-3
         Jz = .5*(r/SIGMA_Z)**2
         return get_pelens_tune(Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)
-    # r = Jz/(2*SIGMA_Z**2)
     r = SIGMA_Z*np.sqrt(2*Jz)
-    # dQxPEL, dQyPEL = get_pelens_tune(
-    # Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)
     dQxPEL, dQyPEL = tune_dist_funcPEL(r)
     rms_x, rms_y = np.sqrt(np.var(dQxPEL)), np.sqrt(np.var(dQyPEL))
     print(rms_x, rms_y)
