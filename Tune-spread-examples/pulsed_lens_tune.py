@@ -1,4 +1,4 @@
-from LHC_constants import SIGMA_Z
+from parameters.LHC_constants import SIGMA_Z
 from tune_calculation import *
 
 
@@ -35,12 +35,14 @@ if __name__ == '__main__':
     n_particles = int(1e7)
     Jz = trunc_exp_rv(low=0, high=2.5**2, scale=1.0, size=n_particles)
 
-    def tune_dist_funcPEL(r):
-        dQmax = 1e-3
-        Jz = .5*(r/SIGMA_Z)**2
-        return get_pelens_tune(Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)
-    r = SIGMA_Z*np.sqrt(2*Jz)
-    dQxPEL, dQyPEL = tune_dist_funcPEL(r)
+    # def tune_dist_funcPEL(r):
+    # dQmax = 1e-3
+    # Jz = .5*(r/SIGMA_Z)**2
+    # return get_pelens_tune(Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)
+    # r = SIGMA_Z*np.sqrt(2*Jz)
+    dQmax = 1e-3
+    dQxPEL, dQyPEL = get_pelens_tune(
+        Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)  # tune_dist_funcPEL(r)
     rms_x, rms_y = np.sqrt(np.var(dQxPEL)), np.sqrt(np.var(dQyPEL))
     print(rms_x, rms_y)
     print(max(dQxPEL), max(dQyPEL))
