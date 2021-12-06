@@ -143,7 +143,7 @@ def get_rfq_tune(Jz, v_2):
     return dQmax_x*dQ, dQmax_y*dQ
 
 
-def plot_spread(dQx, dQy, filename=None, normalise=True):
+def plot_spread(dQx, dQy, filename=None, normalise=True, xlim=(-5, 5), ylim=(-5, 5), color=sbs.color_palette('RdBu')[1]):
     sbs.set(rc={'figure.figsize': (8.3, 5.2),
                 'text.usetex': True,
                 'font.family': 'arial',
@@ -158,11 +158,12 @@ def plot_spread(dQx, dQy, filename=None, normalise=True):
     dQrms_x, dQrms_y = (np.sqrt(np.var(dQx)), np.sqrt(
         np.var(dQy))) if normalise else (1., 1.)
     palette = sbs.color_palette('RdBu')
-    ax = sbs.jointplot(x=dQx/dQrms_x, y=dQy/dQrms_y, kind='hex', color=palette[1], marginal_kws={'bins': 25,
-                                                                                                 # 'hist': True,
-                                                                                                 # 'hist_kws': {'density': True}
-                                                                                                 },
-                       ratio=3, xlim=(-5, 5), ylim=(-5, 5))
+    ax = sbs.jointplot(x=dQx/dQrms_x, y=dQy/dQrms_y, kind='hex', color=color, marginal_kws={'bins': 25,
+                                                                                            'color': color
+                                                                                            # 'hist': True,
+                                                                                            # 'hist_kws': {'density': True}
+                                                                                            },
+                       ratio=3, xlim=xlim, ylim=ylim)
     # / \delta Q_{rms}$')
     ax.ax_joint.set_xlabel(r'$\Delta Q_x/\Delta Q_\mathrm{RMS}$')
     # / \delta Q_{rms}$')

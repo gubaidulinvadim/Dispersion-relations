@@ -1,4 +1,4 @@
-from LHC_constants import *
+from parameters.LHC_constants import *
 import numpy as np
 import scipy as sp
 from scipy.constants import epsilon_0, c, m_e, m_p, e, pi
@@ -14,12 +14,12 @@ from tune_calculation import *
 
 @np.vectorize
 def Q_detuning(phi: float, Jz: float, dQmax=0.001):
-    return dQmax*np.exp(-0.25*Jz*(1-np.cos(2*phi)))
+    return dQmax*np.exp(-0.5*Jz*(1-np.cos(2*phi)))
 
 
 @np.vectorize
 def Q_average_detuning(Jz: float, dQmax=0.001):
-    return dQmax*np.exp(-0.25*Jz)*i0(0.25*Jz)
+    return dQmax*np.exp(-0.5*Jz)*i0(0.5*Jz)
 
 
 @np.vectorize
@@ -64,12 +64,13 @@ if __name__ == '__main__':
             style='ticks',
             palette='colorblind',
             context='talk')
-    Jz = np.linspace(0, 90, 1000)
+    Jz = np.linspace(0, 3, 1000)
     dQmax = 2e-3
     phi = .25*pi
-    plt.plot(Jz, B(B_integrand, Jz, phi)/dQmax)
-    print()
-    print('max value of the B function:', max(B(B_integrand, Jz, phi)/dQmax))
+    for phi in np.linspace(0, 2*pi, 10):
+        plt.plot(Jz, B(B_integrand, Jz, phi)/dQmax)
+        print('max value of the B function:',
+              max(B(B_integrand, Jz, phi)/dQmax))
     time_start = time.process_time()
     p = 0
     l = 0
@@ -83,5 +84,5 @@ if __name__ == '__main__':
     plt.xlabel('$J_z/\epsilon_z$')
     plt.ylabel('Specrtal function')
     plt.legend(frameon=False)
-    plt.savefig('Results/'+'2H_{0:}.pdf'.format(l), bbox_inches='tight')
+    plt.savefig('Results/'+'B.pdf'.format(l), bbox_inches='tight')
     plt.show()
