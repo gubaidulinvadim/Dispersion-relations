@@ -64,25 +64,43 @@ if __name__ == '__main__':
             style='ticks',
             palette='colorblind',
             context='talk')
-    Jz = np.linspace(0, 3, 1000)
+    # Jz = np.linspace(0, 3, 1000)
     dQmax = 2e-3
-    phi = .25*pi
-    for phi in np.linspace(0, 2*pi, 10):
-        plt.plot(Jz, B(B_integrand, Jz, phi)/dQmax)
-        print('max value of the B function:',
-              max(B(B_integrand, Jz, phi)/dQmax))
+    phi = np.linspace(0, 2*pi, 1000)
+    sbs.set_palette('Blues')
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(phi, B(B_integrand, Jz=0, phi=phi) /
+            dQmax, label='$J_z/\epsilon_z=0$')
+    ax.plot(phi, B(B_integrand, Jz=1, phi=phi) /
+            dQmax,  label='$J_z /\epsilon_z=1$')
+    ax.plot(phi, B(B_integrand, Jz=2, phi=phi) /
+            dQmax,  label='$J_z /\epsilon_z=2$')
+    ax.plot(phi, B(B_integrand, Jz=3, phi=phi) /
+            dQmax,  label='$J_z /\epsilon_z=3$')
+    print('max value of the B function:',
+          max(B(B_integrand, 3, phi)/dQmax))
     time_start = time.process_time()
-    p = 0
-    l = 0
-    print('Order of magnitude for longitudinal amplitude: ',
-          SIGMA_Z/(BETA*c)*OMEGA_REV)
+    # p = 0
+    # l = 0
+    # print('Order of magnitude for longitudinal amplitude: ',
+    #   SIGMA_Z/(BETA*c)*OMEGA_REV)
 
     # Hr, Hi = H(Jz, p=p, l=l)
-    time_elapsed = time.process_time()-time_start
-    print('Time elapsed: {0:.2e}'.format(time_elapsed))
-    omega_p = p*OMEGA_REV+Q_X*OMEGA_REV+l*OMEGA_S
-    plt.xlabel('$J_z/\epsilon_z$')
-    plt.ylabel('Specrtal function')
-    plt.legend(frameon=False)
-    plt.savefig('Results/'+'B.pdf'.format(l), bbox_inches='tight')
+    # time_elapsed = time.process_time()-time_start
+    # print('Time elapsed: {0:.2e}'.format(time_elapsed))
+    # omega_p = p*OMEGA_REV+Q_X*OMEGA_REV+l*OMEGA_S
+    ax.set_xlabel('$\phi_z$')
+    ax.set_ylabel(
+        '$B(J_z, \phi)$ [$\\frac{\Delta Q_\mathrm{max}}{Q_\mathrm{s}}$]')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_xlim(0, 2*pi)
+    ticks = np.linspace(0, 2*pi, 5)
+    ax.set_xticks(ticks)
+    ax.minorticks_on()
+    ax.set_xticklabels(
+        ['$0$', '$\\frac{\pi}{2}$', '$\pi$', '$\\frac{3\pi}{2}$', '$2\pi$'],)
+    ax.xaxis.grid()
+    plt.figlegend(frameon=False)
+    plt.savefig('Results/'+'B.pdf', bbox_inches='tight')
     plt.show()
