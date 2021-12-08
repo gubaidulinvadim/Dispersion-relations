@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.constants import c, m_p, e, pi
-from scipy.integrate import quad, dblquad
+from scipy.integrate import quad, dblquad, tplquad
 from numba import jit
 from tqdm import tqdm
 from matplotlib import pyplot as plt
@@ -227,6 +227,70 @@ class LongitudinalDispersionRelationWithSpaceCharge(LongitudinalDispersionRelati
         return stab_vec_re, stab_vec_im
 
 
+class GeneralizedDispersionRelation(TransverseDispersionRelation):
+    def __init__(self, transverse_tune_distribution_function, longitudinal_tune_distribution_function):
+        self.transverse_function = transverse_tune_distribution_function
+        self.longitudinal_function = longitudinal_tune_distribution_function
+
+    def distribution_func(self, J_x, J_y, J_z):
+        return -np.exp(-J_x-J_y-J_z)
+
+    def dispersion_integrand(self, J_x, J_y, J_z, tune: float, Qs, mode=0):
+        '''
+        J_x: horizontal action variable normalized to emittance
+        J_y: vertical action variable normalized to emittance
+        tune: dimensionless tune corresponding to frequency of external excitation
+        '''
+        transverse_tune_shift_x, transverse_tune_shift_y = self.transverse_function(
+            J_x, J_y)
+        longitudinal_tune_shift_x, longitudinal_tune_shift_y = self.longitudinal_function(
+            J_z)
+
+        return -self.distribution_func(J_x, J_y, J_z)*J_x*np.power(J_z, np.abs(mode))/(tune - transverse_tune_shift_x-longitudinal_tune_shift_x - mode*Qs + 1j*EPSILON)
+
+    def real_part_of_integrand(self, *args):
+        return np.real(self.dispersion_integrand(*args))
+
+    def imaginary_part_of_integrand(self, *args):
+        return np.imag(self.dispersion_integrand(*args))
+
+    def compute_real_part(self, tune, Qs, mode=0):
+        r = tplquad(self.real_part_of_integrand,
+                    0., MAX_INTEGRAL_LIMIT,
+                    lambda x: 0., lambda x: MAX_INTEGRAL_LIMIT,
+                    lambda x, y: 0, lambda x, y: MAX_INTEGRAL_LIMIT,
+                    args=(tune, Qs, mode))[0]
+        return r
+
+    def compute_imag_part(self, tune, Qs, mode=0):
+        i = tplquad(self.imaginary_part_of_integrand,
+                    0., MAX_INTEGRAL_LIMIT,
+                    lambda x: 0., lambda x: MAX_INTEGRAL_LIMIT,
+                    lambda x, y: 0, lambda x, y: MAX_INTEGRAL_LIMIT,
+                    args=(tune, Qs, mode))[0]
+        return i
+
+    def dispersion_relation(self, tune_vec, Qs, mode=0):
+        real_vec = np.empty(shape=(len(tune_vec),), dtype=np.float64)
+        imag_vec = np.empty(shape=(len(tune_vec), ), dtype=np.float64)
+        for (j, tune) in tqdm(enumerate(tune_vec), total=len(tune_vec)):
+            real_vec[j] = self.compute_real_part(tune, Qs, mode)
+            imag_vec[j] = self.compute_imag_part(tune, Qs, mode)
+        return real_vec, imag_vec
+
+    def dispersion_relation2(self, tune, Qs, mode=0):
+        vec = complexdblquad(self.dispersion_integrand, 0.,
+                             MAX_INTEGRAL_LIMIT, lambda x: 0., lambda x: MAX_INTEGRAL_LIMIT, args=(tune, Qs, mode))
+        stab_vec = np.divide(vec, np.absolute(vec))
+        return stab_vec
+
+    def tune_shift(self, real_vec, imag_vec):
+        ampl_vec = real_vec*real_vec+imag_vec*imag_vec
+        stab_vec_re = np.divide(real_vec, ampl_vec)
+        stab_vec_im = np.divide(-imag_vec, ampl_vec)
+        return stab_vec_re, stab_vec_im
+
+
 def save_results(folder, stab_vec_re, stab_vec_im, tune_vec):
     np.save(
         folder+'dQre.npy', stab_vec_re)
@@ -251,6 +315,10 @@ if __name__ == '__main__':
     @jit(nogil=True)
     def tune_dist_funcOCT(J_x, J_y):
         J = np.array((J_x, J_y))
+        a = np.array(((.92e-4, -.65e-4), (-.65e-4, .96e-4)))
+        I = 550
+        I_max = 550
+        a *= I/I_max
         return get_octupole_tune(-a, J)
 
     def tune_dist_funcEL(J_x, J_y):
@@ -260,22 +328,26 @@ if __name__ == '__main__':
         return get_pelens_tune(Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)
 
     def tune_dist_funcRFQ(Jz):
-        v2 = 4e9  # 2e9
+        v2 = 2e9  # 2e9
         return get_rfq_tune(Jz, v2)
     # dispersion_solver = TransverseDispersionRelationWithSpaceCharge(tune_dist_func2, 0.2e-4)
     # dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
-    dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcPEL)
+    # dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcPEL)
+    dispersion_solver = GeneralizedDispersionRelation(transverse_tune_distribution_function=tune_dist_funcOCT,
+                                                      longitudinal_tune_distribution_function=tune_dist_funcRFQ)
     # dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(tune_dist_func_long,  0.0001)
     legend = []
-    tune_vec = np.linspace(-Q_S, Q_S, 500)
+    tune_vec = np.linspace(-Q_S, Q_S, 100)
     for mode in [0, ]:
-        def func(Jz, mode):
-            return np.power(Jz, np.abs(mode))*np.exp(-Jz)
+        def func(Jx, Jy, Jz, mode):
+            return -Jy*np.power(Jz, np.abs(mode))*np.exp(-Jz-Jx-Jy)
 
         def normalisation(mode=0):
-            return quad(func, 0, MAX_INTEGRAL_LIMIT, args=(mode,))[0]
+            return tplquad(func, 0, MAX_INTEGRAL_LIMIT,
+                           lambda x: 0, lambda x: MAX_INTEGRAL_LIMIT,
+                           lambda x, y: 0, lambda x, y: MAX_INTEGRAL_LIMIT,
+                           args=(mode,))[0]
         N = normalisation(mode)
-
         print('Normalisation for mode {0:} is: {1:.2e}'.format(mode, N))
         real_vec, imag_vec = dispersion_solver.dispersion_relation(
             tune_vec, Q_S, mode=mode)
@@ -285,7 +357,7 @@ if __name__ == '__main__':
     # stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(real_vec, imag_vec, sc_real_vec, sc_imag_vec)
         stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
             real_vec, imag_vec)
-        folder = '/home/vgubaidulin/PhD/Data/DR/pelens(m={0:})/'.format(mode)
+        folder = '/home/vgubaidulin/PhD/Data/DR/rfqoct(m={0:})/'.format(mode)
         # os.mkdir(folder)
         save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
         plt.plot(stab_vec_re/Q_S, stab_vec_im/Q_S)

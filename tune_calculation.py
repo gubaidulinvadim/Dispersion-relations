@@ -159,9 +159,9 @@ def plot_spread(dQx, dQy, filename=None, normalise=True, xlim=(-5, 5), ylim=(-5,
         np.var(dQy))) if normalise else (1., 1.)
     palette = sbs.color_palette('RdBu')
     ax = sbs.jointplot(x=dQx/dQrms_x, y=dQy/dQrms_y, kind='hex', color=color, marginal_kws={'bins': 25,
-                                                                                            'color': color
-                                                                                            # 'hist': True,
-                                                                                            # 'hist_kws': {'density': True}
+                                                                                            'color': color,
+                                                                                            'hist': True,
+                                                                                            'hist_kws': {'density': True}
                                                                                             },
                        ratio=3, xlim=xlim, ylim=ylim)
     # / \delta Q_{rms}$')
