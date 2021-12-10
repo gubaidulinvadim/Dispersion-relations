@@ -15,4 +15,3 @@ ALPHA_0 = [53.83**-2]
 GAMMA_T = 1. / sqrt(ALPHA_0)
 ETA = ALPHA_0[0]-GAMMA**-2
 BETA_Z = ETA*BETA*c/OMEGA_S
-print(OMEGA_REV*Q_S)
