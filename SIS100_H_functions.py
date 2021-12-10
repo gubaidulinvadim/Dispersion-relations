@@ -1,6 +1,6 @@
 from Schenk import *
 from scipy.constants import c, m_p, e
-from SIS100_constants import *
+from parameters.SIS100_constants import *
 if __name__ == '__main__':
     sbs.set(rc={'figure.figsize': (8.3, 5.2),
                 'text.usetex': True,
