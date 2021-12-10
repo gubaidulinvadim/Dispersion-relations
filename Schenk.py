@@ -43,6 +43,21 @@ def B_integrand_RFQ(phi: float, Jz: float, dQmax=.002):
 
 
 @np.vectorize
+def Q_detuning_Qpp(phi: float, Jz: float, dQmax=0.001):
+    return dQmax/3*Jz*np.sin(2*phi)+dQmax/3*Jz
+
+
+@np.vectorize
+def Q_average_detuning_Qpp(Jz: float, dQmax=0.001):
+    return dQmax/3*Jz
+
+
+@np.vectorize
+def B_integrand_Qpp(phi: float, Jz: float, dQmax=.002):
+    return dQmax/3*Jz*np.sin(2*phi)
+
+
+@np.vectorize
 def B(func: object, Jz: float, phi: float):
     return quad(func, 0, phi, args=(Jz,))[0]
 
