@@ -23,7 +23,7 @@ def Q_average_detuning(Jz: float, dQmax=0.001):
 
 
 @np.vectorize
-def B_integrand(phi: float, Jz: float, dQmax=.002):
+def B_integrand(phi: float, Jz: float, dQmax=.001):
     return Q_detuning(phi, Jz, dQmax) - Q_average_detuning(Jz, dQmax)
 
 
@@ -38,7 +38,7 @@ def Q_average_detuning_RFQ(Jz: float, dQmax=0.001):
 
 
 @np.vectorize
-def B_integrand_RFQ(phi: float, Jz: float, dQmax=.002):
+def B_integrand_RFQ(phi: float, Jz: float, dQmax=.001):
     return Q_detuning_RFQ(phi, Jz, dQmax) - Q_average_detuning_RFQ(Jz, dQmax)
 
 
@@ -53,8 +53,13 @@ def Q_average_detuning_Qpp(Jz: float, dQmax=0.001):
 
 
 @np.vectorize
-def B_integrand_Qpp(phi: float, Jz: float, dQmax=.002):
+def B_integrand_Qpp(phi: float, Jz: float, dQmax=.001):
     return -dQmax/3*Jz*np.cos(2*phi)
+
+
+@np.vectorize
+def B_integrand_Qp(phi: float, Jz: float, dQmax=.001):
+    return dQmax/np.sqrt(3)*np.sqrt(2*Jz)*np.sin(phi)
 
 
 @np.vectorize
