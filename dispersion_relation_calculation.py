@@ -340,7 +340,7 @@ if __name__ == '__main__':
     tune_vec = np.linspace(-Q_S, Q_S, 100)
     for mode in [0, ]:
         def func(Jx, Jy, Jz, mode):
-            return -Jy*np.power(Jz, np.abs(mode))*np.exp(-Jz-Jx-Jy)
+            return Jy*np.power(Jz, np.abs(mode))*np.exp(-Jz-Jx-Jy)
 
         def normalisation(mode=0):
             return tplquad(func, 0, MAX_INTEGRAL_LIMIT,
