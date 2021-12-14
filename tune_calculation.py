@@ -186,8 +186,7 @@ if __name__ == '__main__':
     # dQrms_oct_x = np.empty(shape=(5,), dtype=np.float64)
     # dQrms_elens_x = np.empty(shape=(5,), dtype=np.float64)
     # dQrms_combo_x = np.empty(shape=(5,), dtype=np.float64)
-    # Jz = trunc_exp_rv(0, 2.5**2
-    # , 1.0, n_particles)
+    Jz = trunc_exp_rv(0, 6, 1.0, n_particles)
     # p0 = Ekin*e/c
     # gamma = 1+Ekin*e/(m_p*c**2)
     # beta = np.sqrt(1-gamma**-2)
@@ -223,9 +222,10 @@ if __name__ == '__main__':
     # p0 = np.sqrt(gamma**2 - 1) * A * m_p * c
 
     # dpp = np.random.normal(p0, .5e-3*p0, 16384)-p0
-    dQxel, dQyel = get_elens_tune(
-        0.001, Jx, Jy, ratio=.5, simplified=False)
-    # dQxel, dQyel = get_pelens_tune(Jz, max_tune_shift=1e-3)
+    # dQxel, dQyel = get_elens_tune(
+    # 0.001, Jx, Jy, ratio=.5, simplified=False)
+    dQxel, dQyel = get_pelens_tune(
+        Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)
     # dQxsc, dQysc = get_sc_tune_for_round_beam(-0, Jx, Jy, Jz)
     # dQxel, dQyel = get_rfq_tune(Jz, 2.23e9)
     # np.save('/home/vgubaidulin/PhD/Data/tmp/dQELx.npy', dQxel)
@@ -241,6 +241,9 @@ if __name__ == '__main__':
     ax = plot_spread(dQxel, dQyel, normalise=True, filename=None)
     ax.ax_joint.plot(np.mean(dQxel)/rms_x, np.mean(dQyel) /
                      rms_y, marker='o', c='r')
+    ax.ax_joint.set_xlim(0, 8)
+    ax.ax_joint.set_ylim(0, 8)
+
     # print(np.mean(dQxel)/max(dQxel), np.mean(dQyel)/max(dQyel))
     # plt.savefig('/home/vgubaidulin/PhD/pelens_sc0.pdf', bbox_inches = 'tight')
     plt.show()
