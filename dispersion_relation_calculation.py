@@ -332,21 +332,22 @@ if __name__ == '__main__':
         return get_rfq_tune(Jz, v2)
     # dispersion_solver = TransverseDispersionRelationWithSpaceCharge(tune_dist_func2, 0.2e-4)
     # dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
-    # dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcPEL)
-    dispersion_solver = GeneralizedDispersionRelation(transverse_tune_distribution_function=tune_dist_funcOCT,
-                                                      longitudinal_tune_distribution_function=tune_dist_funcRFQ)
+    dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcPEL)
+    # dispersion_solver = GeneralizedDispersionRelation(transverse_tune_distribution_function=tune_dist_funcOCT,
+    #   longitudinal_tune_distribution_function=tune_dist_funcRFQ)
     # dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(tune_dist_func_long,  0.0001)
     legend = []
-    tune_vec = np.linspace(-Q_S, Q_S, 100)
-    for mode in [0, ]:
-        def func(Jx, Jy, Jz, mode):
-            return Jy*np.power(Jz, np.abs(mode))*np.exp(-Jz-Jx-Jy)
+    tune_vec = np.linspace(-10*Q_S, 10*Q_S, 10000)
+    for mode in [0, 1, 2, 3, 4, 5, 6]:
+        def func(Jz, mode):
+            return np.power(Jz, np.abs(mode))*np.exp(-Jz)
 
         def normalisation(mode=0):
-            return tplquad(func, 0, MAX_INTEGRAL_LIMIT,
-                           lambda x: 0, lambda x: MAX_INTEGRAL_LIMIT,
-                           lambda x, y: 0, lambda x, y: MAX_INTEGRAL_LIMIT,
-                           args=(mode,))[0]
+            # return tplquad(func, 0, MAX_INTEGRAL_LIMIT,
+                        #    lambda x: 0, lambda x: MAX_INTEGRAL_LIMIT,
+                        #    lambda x, y: 0, lambda x, y: MAX_INTEGRAL_LIMIT,
+                        #    args=(mode,))[0]
+            return quad(func, 0, MAX_INTEGRAL_LIMIT, args=(mode,))[0]
         N = normalisation(mode)
         print('Normalisation for mode {0:} is: {1:.2e}'.format(mode, N))
         real_vec, imag_vec = dispersion_solver.dispersion_relation(
@@ -357,7 +358,7 @@ if __name__ == '__main__':
     # stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(real_vec, imag_vec, sc_real_vec, sc_imag_vec)
         stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
             real_vec, imag_vec)
-        folder = '/home/vgubaidulin/PhD/Data/DR/rfqoct(m={0:})/'.format(mode)
+        folder = '/home/vgubaidulin/PhD/Data/DR/pelens(m={0:})/'.format(mode)
         # os.mkdir(folder)
         save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
         plt.plot(stab_vec_re/Q_S, stab_vec_im/Q_S)
