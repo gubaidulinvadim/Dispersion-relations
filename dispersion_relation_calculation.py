@@ -8,7 +8,7 @@ import seaborn as sbs
 from scipy.special import jv
 from parameters.SIS100_constants import *
 from tune_calculation import *
-MAX_INTEGRAL_LIMIT = 2.4048/2*SIGMA_Z  # *SIGMA_Z  # np.sqrt(500) * SIGMA_Z
+MAX_INTEGRAL_LIMIT = 16
 EPSILON = 1e-6
 
 

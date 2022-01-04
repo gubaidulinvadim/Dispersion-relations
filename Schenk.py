@@ -29,7 +29,7 @@ def B_integrand(phi: float, Jz: float, dQmax=.001):
 
 @np.vectorize
 def Q_detuning_RFQ(phi: float, Jz: float, dQmax=0.001):
-    return dQmax*np.cos(np.sqrt(2*Jz)*np.sin(phi))
+    return dQmax*np.cos(np.sqrt(2*Jz)*np.cos(phi))
 
 
 @np.vectorize
@@ -112,8 +112,6 @@ if __name__ == '__main__':
             dQmax,  label='$J_z /\epsilon_z=2$')
     ax.plot(phi, B(B_integrand, Jz=3, phi=phi) /
             dQmax,  label='$J_z /\epsilon_z=3$')
-    # print('max value of the B function:',
-    #       max(B(B_integrand, 3, phi)/dQmax))
     time_start = time.process_time()
     # p = 0
     # l = 0

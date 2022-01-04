@@ -18,7 +18,7 @@ if __name__ == '__main__':
         return get_pelens_tune(J_z, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)
     dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcPEL)
     Q_S = 1.74e-3
-    mode = 1
+    mode = 0
     tune_vec = np.linspace(-(Q_S+np.abs(mode)*Q_S), np.abs(mode)*Q_S+Q_S, 500)
     real_vec, imag_vec = dispersion_solver.dispersion_relation(
         tune_vec, Q_S, mode=mode)
