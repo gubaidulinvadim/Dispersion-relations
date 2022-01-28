@@ -6,10 +6,13 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 import seaborn as sbs
 from scipy.special import jv
+import os
 from parameters.SIS100_constants import *
 from tune_calculation import *
+from Schenk import *
 MAX_INTEGRAL_LIMIT = 16
 EPSILON = 1e-6
+Q_S = 1.74e-3
 
 
 def complexquad(func, a, b, **kwargs):
@@ -41,6 +44,7 @@ class TransverseDispersionRelation():
     def distribution_func(self, J_x, J_y):
         return -np.exp(-J_x-J_y)
 
+    @lru_cache(maxsize=1000)
     def dispersion_integrand(self, J_x, J_y, tune: float, Qs, mode=0):
         '''
         J_x: horizontal action variable normalized to emittance
@@ -96,7 +100,7 @@ class LongitudinalDispersionRelation(TransverseDispersionRelation):
 
     def dispersion_integrand(self, Jz, tune, Qs, mode=0):
         tune_x, tune_y = self.function(Jz)
-        return self.distribution_func(Jz)*Jz**(np.sqrt(mode**2))/(tune-tune_x-mode*Qs+1j*EPSILON)
+        return self.distribution_func(Jz)*Jz**np.abs(mode)/(tune-tune_x-mode*Qs+1j*EPSILON)
 
     def compute_real_part(self, tune, Qs, mode=0):
         r = quad(self.real_part_of_integrand, 0.,
@@ -110,23 +114,26 @@ class LongitudinalDispersionRelation(TransverseDispersionRelation):
 
 
 class LongitudinalDispersionRelation2(LongitudinalDispersionRelation):
-    def __init__(self, tune_distribution_function, sigma_z, beta_z, omega_betax, beta):
-        self.sigma_z = sigma_z
-        self.beta_z = beta_z
-        self.omega_betax = omega_betax
-        self.beta = beta
-        self.a = self.omega_betax*self.sigma_z/(self.beta*c)
+    def __init__(self, tune_distribution_function):
+        # self.sigma_z = sigma_z
+        # self.beta_z = beta_z
+        # self.omega_betax = omega_betax
+        # self.beta = beta
+        # self.a = self.omega_betax*self.sigma_z/(self.beta*c)
         super().__init__(tune_distribution_function)
 
-    def distribution_func(self, r):
-        Jz = .5*(r/self.sigma_z)**2
-        return np.exp(-Jz)
+    def distribution_func(self, J_z):
+        # Jz = .5*(r/self.sigma_z)**2
+        return np.exp(-J_z)
 
-    def dispersion_integrand(self, r, tune, Qs, mode=0):
-        tune_x, tune_y = self.function(r)
-        Jz = .5*(r/self.sigma_z)**2
-        Bessel_func = jv(abs(mode), self.a*np.sqrt(2*Jz))
-        return np.sqrt(2*Jz)*self.distribution_func(r)*Bessel_func**2/(tune-tune_x-mode*Qs+1j*EPSILON)
+    def dispersion_integrand(self, J_z, tune, Qs, mode=0):
+        tune_x, tune_y = self.function(J_z)
+        # Jz = .5*(r/self.sigma_z)**2
+        z_2 = dQmax/Q_S*ive(1, .5*J_z)
+        z_1 = np.sqrt(J_z)
+        # jv(abs(mode), np.sqrt(2*Jz))
+        Bessel_func = np.abs(H_sum(z_1, z_2, l=mode, n_max=100))
+        return self.distribution_func(J_z)*Bessel_func**2/(tune-tune_x-mode*Qs+1j*EPSILON)
 
 
 class TransverseDispersionRelationWithSpaceCharge(TransverseDispersionRelation):
@@ -303,7 +310,6 @@ def save_results(folder, stab_vec_re, stab_vec_im, tune_vec):
 if __name__ == '__main__':
     Ekin = 7e12
     epsn = 2.5e-6
-
     p0 = Ekin*e/c
     gamma = 1+Ekin*e/(m_p*c**2)
     beta = np.sqrt(1-gamma**-2)
@@ -311,6 +317,7 @@ if __name__ == '__main__':
     ay = 0.96e-4
     bxy = 0.65e-4
     a = np.array(((.92e-4, -.65e-4), (-.65e-4, .96e-4)))
+    # for dQmax in 1e-3*np.linspace(.1, 4, 40):  # 0.5e-3
 
     @jit(nogil=True)
     def tune_dist_funcOCT(J_x, J_y):
@@ -323,9 +330,10 @@ if __name__ == '__main__':
 
     def tune_dist_funcEL(J_x, J_y):
         return get_elens_tune_for_round_beam_simplified(1e-3, J_x, J_y)
+    dQmax = 1.e-3
 
     def tune_dist_funcPEL(Jz):
-        return get_pelens_tune(Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3)
+        return get_pelens_tune(Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)
 
     def tune_dist_funcRFQ(Jz):
         v2 = 2.23e9
@@ -337,20 +345,23 @@ if __name__ == '__main__':
     #   longitudinal_tune_distribution_function=tune_dist_funcRFQ)
     # dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(tune_dist_func_long,  0.0001)
     legend = []
-    tune_vec = np.linspace(-10*Q_S, 10*Q_S, 10000)
-    for mode in [0]:
+    for mode in [0, 1, 2, 3]:
+        tune_vec = np.linspace(mode*Q_S-2*dQmax, mode*Q_S+2*dQmax, 500)
+
         def func(Jz, mode):
-            return np.power(Jz, np.abs(mode))*np.exp(-Jz)
+            # return np.power(Jz, np.abs(mode))*np.exp(-Jz)
+            # z_2 = dQmax/Q_S*ive(1, .5*Jz)
+            # z_1 = np.sqrt(Jz)  # .5*Jz
+            # return 1
+            return np.exp(-Jz)*np.abs(H_sum(z_1, z_2, l=mode, n_max=100))**2
 
         def normalisation(mode=0):
-            # return tplquad(func, 0, MAX_INTEGRAL_LIMIT,
-                        #    lambda x: 0, lambda x: MAX_INTEGRAL_LIMIT,
-                        #    lambda x, y: 0, lambda x, y: MAX_INTEGRAL_LIMIT,
-                        #    args=(mode,))[0]
+            # return tplquad(func, 0, MAX_INTEGRAL_LIMIT)[0]
             return quad(func, 0, MAX_INTEGRAL_LIMIT, args=(mode,))[0]
             # return 1
         N = normalisation(mode)
         print('Normalisation for mode {0:} is: {1:.2e}'.format(mode, N))
+
         real_vec, imag_vec = dispersion_solver.dispersion_relation(
             tune_vec, Q_S, mode=mode)
         real_vec /= N
@@ -359,8 +370,12 @@ if __name__ == '__main__':
     # stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(real_vec, imag_vec, sc_real_vec, sc_imag_vec)
         stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
             real_vec, imag_vec)
-        folder = '/home/vgubaidulin/PhD/Data/DR/rfq(m={0:})/'.format(mode)
-        # os.mkdir(folder)
+        folder = '/home/vgubaidulin/PhD/Data/DR/rfq(m={0:})/'.format(
+            mode, dQmax*1e3)
+        try:
+            os.mkdir(folder)
+        except:
+            pass
         save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
         plt.plot(stab_vec_re/Q_S, stab_vec_im/Q_S)
     plt.legend(legend, loc='upper left')

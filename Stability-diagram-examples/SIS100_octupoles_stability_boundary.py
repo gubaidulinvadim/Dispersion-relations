@@ -1,5 +1,6 @@
 from dispersion_relation_calculation import *
 import matplotlib.ticker as ticker
+from functools import lru_cache
 sbs.set(rc={'figure.figsize': (8.3, 5.2),
             'text.usetex': True,
             'font.family': 'serif',
@@ -24,6 +25,7 @@ if __name__ == '__main__':
     a1 = get_octupole_coefficients(5.8, 17.2, K3, 6, 0.75)
     a2 = get_octupole_coefficients(17.7, 5.8, K3, 6, 0.75)
     a = epsnx*a1+epsny*a2
+    @lru_cache(maxsize=1000)
     @jit(nogil=True)
     def tune_dist_funcOCT(J_x, J_y):
         J = np.array((J_x, J_y))
@@ -31,7 +33,7 @@ if __name__ == '__main__':
     dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
     Qs = 4.47e-3
     mode = 0
-    tune_vec = np.linspace(-0.2, .2, 150)
+    tune_vec = np.linspace(-.2, .2, 150)
     real_vec, imag_vec = dispersion_solver.dispersion_relation(
         tune_vec, Qs, mode=mode)
     stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(

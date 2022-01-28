@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 import seaborn as sbs
 import cython
 import matplotlib.ticker as ticker
+from functools import lru_cache
 
 
 def trunc_exp_rv(low, high, scale, size):
@@ -60,6 +61,7 @@ def get_sc_tune_for_round_beam(dQmax, Jx, Jy):
 
 
 @jit(nogil=True)
+# @lru_cache(maxsize=1000)
 def get_elens_tune_for_round_beam_simplified(dQmax, Jx, Jy, ratio=1.0):
     ax = np.sqrt(2.0*Jx)/ratio
     ay = np.sqrt(2.0*Jy)/ratio
@@ -71,6 +73,7 @@ def get_elens_tune_for_round_beam_simplified(dQmax, Jx, Jy, ratio=1.0):
 
 
 @np.vectorize
+@lru_cache(maxsize=1000)
 def get_elens_tune(dQmax: float, Jx: float, Jy: float, ratio: float = 1.0, simplified: bool = True):
     '''
     @params

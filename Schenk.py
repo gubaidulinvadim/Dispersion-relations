@@ -2,7 +2,7 @@ from parameters.LHC_constants import *
 import numpy as np
 import scipy as sp
 from scipy.constants import epsilon_0, c, m_e, m_p, e, pi
-from scipy.special import i0, i1, iv, j0, j1, jv
+from scipy.special import i0, i1, iv, ive, j0, j1, jv
 from scipy.integrate import quad
 from matplotlib import pyplot as plt
 import seaborn as sbs
@@ -10,6 +10,27 @@ import time
 from tune_calculation import *
 # MAX_INTEGRAL_LIMIT = 16
 # EPSILON = 1e-6
+from functools import lru_cache
+
+
+def B_sum(phi, J_z, n_max=100):
+    n = np.linspace(1, n_max, n_max, dtype=np.int64)
+    return np.sum(np.sin(2*np.tensordot(phi, n, axes=0))*ive(n, .5*J_z)/n, axis=1)
+
+
+def RFQ_sum(phi, J_z, n_max=100):
+    n = np.linspace(1, n_max, n_max, dtype=np.int64)
+    return np.sum(np.sin(2*np.tensordot(phi, n, axes=0))*jv(2*n, np.sqrt(2*J_z))/n*(-1)**n, axis=1)
+
+
+phi = np.linspace(0, 2*pi, 2000)
+@np.vectorize
+# @lru_cache
+def H_sum(z_1, z_2, l=0, n_max=20):
+    n = np.linspace(-n_max, n_max, 2*n_max+1, dtype=np.int64)
+    a = jv(n, z_2)
+    b = (-1)**(np.abs(n))*jv(l+2*n, z_1)
+    return 1j**(-l)*np.dot(a, b)
 
 
 @np.vectorize
@@ -104,36 +125,43 @@ if __name__ == '__main__':
     phi = np.linspace(0, 2*pi, 1000)
     sbs.set_palette('Blues')
     fig, ax = plt.subplots(1, 1)
-    ax.plot(phi, B(B_integrand, Jz=0, phi=phi) /
-            dQmax, label='$J_z/\epsilon_z=0$')
-    ax.plot(phi, B(B_integrand, Jz=1, phi=phi) /
-            dQmax,  label='$J_z /\epsilon_z=1$')
-    ax.plot(phi, B(B_integrand, Jz=2, phi=phi) /
-            dQmax,  label='$J_z /\epsilon_z=2$')
-    ax.plot(phi, B(B_integrand, Jz=3, phi=phi) /
-            dQmax,  label='$J_z /\epsilon_z=3$')
-    time_start = time.process_time()
+    # ax.plot(phi, B(B_integrand, Jz=0, phi=phi) /
+    #         dQmax, label='$J_z/\epsilon_z=0$')
+    # ax.plot(phi, B(B_integrand, Jz=1, phi=phi) /
+    #         dQmax,  label='$J_z /\epsilon_z=1$')
+    # ax.plot(phi, B(B_integrand, Jz=2, phi=phi) /
+    #         dQmax,  label='$J_z /\epsilon_z=2$')
+    # ax.plot(phi, B(B_integrand, Jz=3, phi=phi) /
+    #         dQmax,  label='$J_z /\epsilon_z=3$')
+    # time_start = time.process_time()
     # p = 0
     # l = 0
     # print('Order of magnitude for longitudinal amplitude: ',
     #   SIGMA_Z/(BETA*c)*OMEGA_REV)
 
     # Hr, Hi = H(Jz, p=p, l=l)
+    z_1 = 0
+    z_2 = np.linspace(0, 2, 20)*ive(1, 1)
+    Hres = H_sum(z_1, z_2, l=0, n_max=10)
+    plt.plot(z_2, Hres.real, marker='.')
+    plt.plot(z_2, Hres.imag, marker='.')
+
     # time_elapsed = time.process_time()-time_start
     # print('Time elapsed: {0:.2e}'.format(time_elapsed))
     # omega_p = p*OMEGA_REV+Q_X*OMEGA_REV+l*OMEGA_S
-    ax.set_xlabel('$\phi_z$')
-    ax.set_ylabel(
-        '$B(J_z, \phi)$ [$\\frac{\Delta Q_\mathrm{max}}{Q_\mathrm{s}}$]')
+    ax.set_xlabel('p')
+    ax.set_ylabel('$H$')
+    # ax.set_ylabel(
+    # '$B(J_z, \phi)$ [$\\frac{\Delta Q_\mathrm{max}}{Q_\mathrm{s}}$]')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.set_xlim(0, 2*pi)
-    ticks = np.linspace(0, 2*pi, 5)
-    ax.set_xticks(ticks)
-    ax.minorticks_on()
-    ax.set_xticklabels(
-        ['$0$', '$\\frac{\pi}{2}$', '$\pi$', '$\\frac{3\pi}{2}$', '$2\pi$'],)
+    # ax.set_xlim(0, 2*pi)
+    # ticks = np.linspace(0, 2*pi, 5)
+    # ax.set_xticks(ticks)
+    # ax.minorticks_on()
+    # ax.set_xticklabels(
+    # ['$0$', '$\\frac{\pi}{2}$', '$\pi$', '$\\frac{3\pi}{2}$', '$2\pi$'],)
     ax.xaxis.grid()
     plt.figlegend(frameon=False)
-    plt.savefig('Results/'+'B.pdf', bbox_inches='tight')
+    plt.savefig('Results/'+'H.pdf', bbox_inches='tight')
     plt.show()
