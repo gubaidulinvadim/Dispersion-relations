@@ -7,12 +7,14 @@ from matplotlib import pyplot as plt
 import seaborn as sbs
 from scipy.special import jv
 import os
-from parameters.SIS100_constants import *
+from parameters.LHC_constants import *
 from tune_calculation import *
 from Schenk import *
 MAX_INTEGRAL_LIMIT = 16
 EPSILON = 1e-6
 Q_S = 1.74e-3
+# SIGMA_Z = 13.2
+# R = 10*1086/2/pi
 
 
 def complexquad(func, a, b, **kwargs):
@@ -126,14 +128,29 @@ class LongitudinalDispersionRelation2(LongitudinalDispersionRelation):
         # Jz = .5*(r/self.sigma_z)**2
         return np.exp(-J_z)
 
+    def func(Jz, mode, tune):
+        z_2 = dQmax/Q_S*ive(1, .5*Jz)
+        z_1 = .85*2*SIGMA_Z/R*np.sqrt(Jz)
+        Bessel_func = np.abs(H_sum(z_1, z_2, l=mode, n_max=100))
+        return np.exp(-Jz)*Bessel_func**2
+
+    def normalisation(mode=0, tune=0):
+        return quad(func, 0, MAX_INTEGRAL_LIMIT, args=(mode,))[0]
+
     def dispersion_integrand(self, J_z, tune, Qs, mode=0):
         tune_x, tune_y = self.function(J_z)
-        # Jz = .5*(r/self.sigma_z)**2
         z_2 = dQmax/Q_S*ive(1, .5*J_z)
-        z_1 = np.sqrt(J_z)
-        # jv(abs(mode), np.sqrt(2*Jz))
+        xi_1 = 0.1
+        z_1 = (.28+xi_1/ETA*Q_X)*2*SIGMA_Z/R*np.sqrt(.5*J_z)
         Bessel_func = np.abs(H_sum(z_1, z_2, l=mode, n_max=100))
         return self.distribution_func(J_z)*Bessel_func**2/(tune-tune_x-mode*Qs+1j*EPSILON)
+
+    def tune_shift(self, real_vec, imag_vec):
+        ampl_vec = real_vec*real_vec+imag_vec*imag_vec
+        stab_vec_re = np.divide(real_vec, ampl_vec)
+        stab_vec_im = np.divide(-imag_vec, ampl_vec)
+        N = normalisation()
+        return stab_vec_re, stab_vec_im
 
 
 class TransverseDispersionRelationWithSpaceCharge(TransverseDispersionRelation):
@@ -317,67 +334,68 @@ if __name__ == '__main__':
     ay = 0.96e-4
     bxy = 0.65e-4
     a = np.array(((.92e-4, -.65e-4), (-.65e-4, .96e-4)))
-    # for dQmax in 1e-3*np.linspace(.1, 4, 40):  # 0.5e-3
+    for dQmax in 1e-3*np.linspace(.1, 4, 40):  # 0.5e-3
 
-    @jit(nogil=True)
-    def tune_dist_funcOCT(J_x, J_y):
-        J = np.array((J_x, J_y))
-        a = np.array(((.92e-4, -.65e-4), (-.65e-4, .96e-4)))
-        I = 550
-        I_max = 550
-        a *= I/I_max
-        return get_octupole_tune(-a, J)
+        @jit(nogil=True)
+        def tune_dist_funcOCT(J_x, J_y):
+            J = np.array((J_x, J_y))
+            a = np.array(((.92e-4, -.65e-4), (-.65e-4, .96e-4)))
+            I = 550
+            I_max = 550
+            a *= I/I_max
+            return get_octupole_tune(-a, J)
 
-    def tune_dist_funcEL(J_x, J_y):
-        return get_elens_tune_for_round_beam_simplified(1e-3, J_x, J_y)
-    dQmax = 1.e-3
+        def tune_dist_funcEL(J_x, J_y):
+            return get_elens_tune_for_round_beam_simplified(1e-3, J_x, J_y)
 
-    def tune_dist_funcPEL(Jz):
-        return get_pelens_tune(Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)
+        def tune_dist_funcPEL(Jz):
+            return get_pelens_tune(Jz, max_tune_shift_x=dQmax, max_tune_shift_y=dQmax)
 
-    def tune_dist_funcRFQ(Jz):
-        v2 = 2.23e9
-        return get_rfq_tune(Jz, v2)
-    # dispersion_solver = TransverseDispersionRelationWithSpaceCharge(tune_dist_func2, 0.2e-4)
-    # dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
-    dispersion_solver = LongitudinalDispersionRelation(tune_dist_funcRFQ)
-    # dispersion_solver = GeneralizedDispersionRelation(transverse_tune_distribution_function=tune_dist_funcOCT,
-    #   longitudinal_tune_distribution_function=tune_dist_funcRFQ)
-    # dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(tune_dist_func_long,  0.0001)
-    legend = []
-    for mode in [0, 1, 2, 3]:
-        tune_vec = np.linspace(mode*Q_S-2*dQmax, mode*Q_S+2*dQmax, 500)
+        def tune_dist_funcRFQ(Jz):
+            v2 = 2.23e9
+            return get_rfq_tune(Jz, v2)
+        # dispersion_solver = TransverseDispersionRelationWithSpaceCharge(tune_dist_func2, 0.2e-4)
+        # dispersion_solver = TransverseDispersionRelation(tune_dist_funcOCT)
+        dispersion_solver = LongitudinalDispersionRelation2(tune_dist_funcPEL)
+        # dispersion_solver = GeneralizedDispersionRelation(transverse_tune_distribution_function=tune_dist_funcOCT,
+        #   longitudinal_tune_distribution_function=tune_dist_funcRFQ)
+        # dispersion_solver = LongitudinalDispersionRelationWithSpaceCharge(tune_dist_func_long,  0.0001)
+        legend = []
+        # dQmax = .1e-3
 
-        def func(Jz, mode):
-            # return np.power(Jz, np.abs(mode))*np.exp(-Jz)
-            # z_2 = dQmax/Q_S*ive(1, .5*Jz)
-            # z_1 = np.sqrt(Jz)  # .5*Jz
-            # return 1
-            return np.exp(-Jz)*np.abs(H_sum(z_1, z_2, l=mode, n_max=100))**2
+        for mode in [-1, 0]:
+            tune_vec = np.linspace(mode*Q_S-2*dQmax, mode*Q_S+2*dQmax, 500)
 
-        def normalisation(mode=0):
-            # return tplquad(func, 0, MAX_INTEGRAL_LIMIT)[0]
-            return quad(func, 0, MAX_INTEGRAL_LIMIT, args=(mode,))[0]
-            # return 1
-        N = normalisation(mode)
-        print('Normalisation for mode {0:} is: {1:.2e}'.format(mode, N))
+            def func(Jz, mode):
+                z_2 = dQmax/Q_S*ive(1, .5*Jz)
+                xi_1 = 0.1
+                z_1 = (.28-xi_1/ETA*Q_X)*2*SIGMA_Z/R*np.sqrt(.5*Jz)
+                Bessel_func = np.abs(H_sum(z_1, z_2, l=mode, n_max=100))
+                return np.exp(-Jz)*Bessel_func**2
 
-        real_vec, imag_vec = dispersion_solver.dispersion_relation(
-            tune_vec, Q_S, mode=mode)
-        real_vec /= N
-        imag_vec /= N
-    # sc_real_vec, sc_imag_vec = dispersion_solver.sc_component_dispersion_relation(tune_vec, Qs)
-    # stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(real_vec, imag_vec, sc_real_vec, sc_imag_vec)
-        stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
-            real_vec, imag_vec)
-        folder = '/home/vgubaidulin/PhD/Data/DR/rfq(m={0:})/'.format(
-            mode, dQmax*1e3)
-        try:
-            os.mkdir(folder)
-        except:
-            pass
-        save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
-        plt.plot(stab_vec_re/Q_S, stab_vec_im/Q_S)
+            def normalisation(mode=0):
+                # return tplquad(func, 0, MAX_INTEGRAL_LIMIT)[0]
+                return quad(func, 0, MAX_INTEGRAL_LIMIT, args=(mode,))[0]
+                # return 1
+            N = normalisation(mode)
+            print('Normalisation for mode {0:} is: {1:.2e}'.format(mode, N))
+
+            real_vec, imag_vec = dispersion_solver.dispersion_relation(
+                tune_vec, Q_S, mode=mode)
+            real_vec /= N
+            imag_vec /= N
+        # sc_real_vec, sc_imag_vec = dispersion_solver.sc_component_dispersion_relation(tune_vec, Qs)
+        # stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(real_vec, imag_vec, sc_real_vec, sc_imag_vec)
+            stab_vec_re, stab_vec_im = dispersion_solver.tune_shift(
+                real_vec, imag_vec)
+            folder = '/home/vgubaidulin/PhD/Data/DR/pelensLHC(m={0:},dQmax={1:})/'.format(
+                mode, dQmax*1e3)
+            try:
+                os.mkdir(folder)
+            except:
+                pass
+            save_results(folder, stab_vec_re, stab_vec_im, tune_vec)
+            plt.plot(stab_vec_re/Q_S, stab_vec_im/Q_S)
     plt.legend(legend, loc='upper left')
     plt.xlabel('$\Im\Delta Q$')
     plt.ylabel('$\Re\Delta Q$')

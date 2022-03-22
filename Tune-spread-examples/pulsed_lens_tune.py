@@ -47,6 +47,6 @@ if __name__ == '__main__':
     print(rms_x, rms_y)
     print(max(dQxPEL), max(dQyPEL))
     ax = plot_spread(dQxPEL, dQyPEL, normalise=True)
-    plt.savefig(
-        'Results/'+'PEL'+'.pdf', bbox_inches='tight')
+    # plt.savefig(
+    # 'Results/'+'PEL'+'.pdf', bbox_inches='tight')
     plt.show()

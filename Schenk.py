@@ -1,16 +1,17 @@
-from parameters.LHC_constants import *
-import numpy as np
-import scipy as sp
-from scipy.constants import epsilon_0, c, m_e, m_p, e, pi
-from scipy.special import i0, i1, iv, ive, j0, j1, jv
-from scipy.integrate import quad
-from matplotlib import pyplot as plt
-import seaborn as sbs
-import time
+from functools import lru_cache
 from tune_calculation import *
+import time
+import seaborn as sbs
+from matplotlib import pyplot as plt
+from scipy.integrate import quad
+from scipy.special import i0, i1, iv, ive, j0, j1, jv
+from scipy.constants import epsilon_0, c, m_e, m_p, e, pi
+import scipy as sp
+import numpy as np
+from parameters.LHC_constants import *
+print('Slip factor: ', ETA)
 # MAX_INTEGRAL_LIMIT = 16
 # EPSILON = 1e-6
-from functools import lru_cache
 
 
 def B_sum(phi, J_z, n_max=100):
@@ -29,7 +30,7 @@ phi = np.linspace(0, 2*pi, 2000)
 def H_sum(z_1, z_2, l=0, n_max=20):
     n = np.linspace(-n_max, n_max, 2*n_max+1, dtype=np.int64)
     a = jv(n, z_2)
-    b = (-1)**(np.abs(n))*jv(l+2*n, z_1)
+    b = jv(l-2*n, z_1)
     return 1j**(-l)*np.dot(a, b)
 
 

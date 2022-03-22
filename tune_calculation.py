@@ -130,7 +130,7 @@ def get_pelens_tune(Jz, max_tune_shift_x=1e-3, max_tune_shift_y=1e-3):
     Jz -- longitudinal action (normalized to the longitudinal beam emittance)
     max_tune_shift -- maximal tune shift from pulsed electron lens                                                                                                                                                                                                                 
     '''
-    dQx = i0e(-.5*Jz)  # i0(-.25*Jz)*np.exp(-.25*Jz)
+    dQx = i0e(.25*Jz)  # i0(-.25*Jz)*np.exp(-.25*Jz)
     return max_tune_shift_x*dQx, max_tune_shift_y*dQx
 
 
@@ -163,8 +163,8 @@ def plot_spread(dQx, dQy, filename=None, normalise=True, xlim=(-5, 5), ylim=(-5,
     palette = sbs.color_palette('RdBu')
     ax = sbs.jointplot(x=dQx/dQrms_x, y=dQy/dQrms_y, kind='hex', color=color, marginal_kws={'bins': 25,
                                                                                             'color': color,
-                                                                                            'hist': True,
-                                                                                            'hist_kws': {'density': True}
+                                                                                            # 'hist': True,
+                                                                                            'stat': 'density'
                                                                                             },
                        ratio=3, xlim=xlim, ylim=ylim)
     # / \delta Q_{rms}$')
